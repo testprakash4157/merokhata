@@ -1,0 +1,3116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Khata — Branch Accounts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,600;0,700;1,500&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#FAF7F0;
+  --paper-raised:#FFFFFF;
+  --ink:#1B2A4A;
+  --ink-soft:#4A5570;
+  --ink-faint:#8A8F9E;
+  --brass:#B8862E;
+  --brass-light:#E8D9B8;
+  --brass-dark:#8C661F;
+  --sage:#4A7C59;
+  --sage-light:#E3EFE6;
+  --brick:#A8453A;
+  --brick-light:#F4E3E1;
+  --line:#D8D2C4;
+  --line-soft:#E8E3D6;
+  --shadow:0 2px 8px rgba(27,42,74,0.07);
+  --shadow-lg:0 8px 28px rgba(27,42,74,0.13);
+  --radius:3px;
+  --font-display:'Lora',serif;
+  --font-body:'Inter',sans-serif;
+  --font-mono:'JetBrains Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;}
+body{
+  font-family:var(--font-body);
+  background:var(--paper);
+  color:var(--ink);
+  font-size:14px;
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+button{font-family:inherit;cursor:pointer;}
+input,select,textarea{font-family:inherit;font-size:14px;}
+::selection{background:var(--brass-light);}
+
+/* Tabular numerals everywhere money appears */
+.num, .num *{
+  font-family:var(--font-mono);
+  font-variant-numeric:tabular-nums;
+  letter-spacing:-0.02em;
+}
+
+a{color:var(--brass-dark);text-decoration:none;}
+
+/* ---------- Scrollbar (subtle) ---------- */
+::-webkit-scrollbar{width:10px;height:10px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--line);border-radius:5px;}
+::-webkit-scrollbar-thumb:hover{background:var(--ink-faint);}
+
+/* ================= LOGIN SCREEN ================= */
+#loginScreen{
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:
+    repeating-linear-gradient(180deg, transparent 0, transparent 27px, var(--line-soft) 27px, var(--line-soft) 28px),
+    var(--paper);
+  padding:24px;
+}
+.login-card{
+  width:100%;
+  max-width:400px;
+  background:var(--paper-raised);
+  border:1px solid var(--line);
+  border-radius:6px;
+  box-shadow:var(--shadow-lg);
+  padding:40px 36px 32px;
+  position:relative;
+  overflow:hidden;
+}
+.login-card::before{
+  content:"";
+  position:absolute;
+  top:0;left:0;right:0;
+  height:5px;
+  background:linear-gradient(90deg, var(--brass-dark), var(--brass), var(--sage));
+}
+.login-brand{
+  text-align:center;
+  margin-bottom:28px;
+}
+.login-brand .mark{
+  width:56px;height:56px;
+  margin:0 auto 14px;
+  border:2px solid var(--ink);
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-family:var(--font-display);
+  font-weight:700;
+  font-size:22px;
+  color:var(--ink);
+  transform:rotate(-6deg);
+}
+.login-brand h1{
+  font-family:var(--font-display);
+  font-size:26px;
+  font-weight:700;
+  letter-spacing:-0.01em;
+}
+.login-brand p{
+  color:var(--ink-faint);
+  font-size:13px;
+  margin-top:4px;
+}
+.field{margin-bottom:16px;}
+.field label{
+  display:block;
+  font-size:12px;
+  font-weight:600;
+  text-transform:uppercase;
+  letter-spacing:0.05em;
+  color:var(--ink-soft);
+  margin-bottom:6px;
+}
+.field input, .field select{
+  width:100%;
+  padding:10px 12px;
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  background:var(--paper);
+  color:var(--ink);
+  transition:border-color .15s, box-shadow .15s;
+}
+.field input:focus, .field select:focus{
+  outline:none;
+  border-color:var(--brass);
+  box-shadow:0 0 0 3px var(--brass-light);
+}
+.btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  padding:10px 18px;
+  border-radius:var(--radius);
+  border:1px solid transparent;
+  font-size:13.5px;
+  font-weight:600;
+  transition:all .15s;
+}
+.btn-primary{
+  background:var(--ink);
+  color:var(--paper);
+  width:100%;
+}
+.btn-primary:hover{background:#0F1B30;}
+.btn-secondary{
+  background:transparent;
+  border-color:var(--line);
+  color:var(--ink);
+}
+.btn-secondary:hover{border-color:var(--ink-faint);}
+.btn-ghost{
+  background:transparent;
+  color:var(--ink-soft);
+}
+.btn-ghost:hover{color:var(--ink);background:var(--line-soft);}
+.btn-danger{
+  background:var(--brick);
+  color:white;
+}
+.btn-danger:hover{background:#8a372e;}
+.btn-sage{
+  background:var(--sage);
+  color:white;
+}
+.btn-sage:hover{background:#3a6347;}
+.btn-sm{padding:6px 12px;font-size:12.5px;}
+.btn:disabled{opacity:0.5;cursor:not-allowed;}
+.btn-block{width:100%;}
+
+.login-error{
+  background:var(--brick-light);
+  color:var(--brick);
+  border:1px solid var(--brick);
+  border-radius:var(--radius);
+  padding:9px 12px;
+  font-size:12.5px;
+  margin-bottom:14px;
+  display:none;
+}
+.login-error.show{display:block;}
+
+.login-footnote{
+  text-align:center;
+  margin-top:18px;
+  font-size:12px;
+  color:var(--ink-faint);
+}
+
+/* ================= APP SHELL ================= */
+#appShell{display:none;min-height:100vh;}
+#appShell.active{display:flex;}
+
+.sidebar{
+  width:230px;
+  flex-shrink:0;
+  background:var(--ink);
+  color:#D8DEEB;
+  display:flex;
+  flex-direction:column;
+  position:relative;
+}
+.sidebar::after{
+  content:"";
+  position:absolute;
+  top:0;right:0;bottom:0;
+  width:6px;
+  background:repeating-linear-gradient(180deg, var(--brass) 0 10px, transparent 10px 20px);
+  opacity:0.5;
+}
+.sidebar-brand{
+  padding:22px 20px 18px;
+  border-bottom:1px solid rgba(255,255,255,0.1);
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.sidebar-brand .mark{
+  width:34px;height:34px;
+  border:2px solid var(--brass-light);
+  border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-display);font-weight:700;
+  color:var(--brass-light);
+  font-size:15px;
+  transform:rotate(-6deg);
+  flex-shrink:0;
+}
+.sidebar-brand h1{
+  font-family:var(--font-display);
+  font-size:18px;
+  font-weight:700;
+  color:white;
+}
+.sidebar-brand p{font-size:10.5px;color:var(--brass-light);letter-spacing:0.04em;text-transform:uppercase;}
+
+.branch-indicator{
+  margin:14px 16px;
+  padding:10px 12px;
+  background:rgba(255,255,255,0.06);
+  border:1px solid rgba(255,255,255,0.1);
+  border-radius:var(--radius);
+  font-size:12px;
+}
+.branch-indicator .label{color:var(--brass-light);font-size:10px;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:3px;}
+.branch-indicator .value{font-weight:600;color:white;font-family:var(--font-display);font-size:14px;}
+.branch-switch-select{
+  width:100%;
+  margin-top:8px;
+  padding:6px 8px;
+  font-size:12px;
+  background:rgba(255,255,255,0.08);
+  border:1px solid rgba(255,255,255,0.15);
+  color:white;
+  border-radius:3px;
+}
+.branch-switch-select option{color:#111;}
+
+.nav{flex:1;overflow-y:auto;padding:10px 0;}
+.nav-section-label{
+  font-size:10px;
+  text-transform:uppercase;
+  letter-spacing:0.08em;
+  color:rgba(255,255,255,0.35);
+  padding:14px 20px 6px;
+}
+.nav-item{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:9px 20px;
+  color:rgba(255,255,255,0.75);
+  font-size:13.5px;
+  font-weight:500;
+  cursor:pointer;
+  border-left:3px solid transparent;
+  transition:all .12s;
+  position:relative;
+}
+.nav-item .ic{width:17px;height:17px;flex-shrink:0;opacity:0.85;}
+.nav-badge{
+  margin-left:auto;
+  background:var(--brick);
+  color:white;
+  font-size:10.5px;
+  font-weight:700;
+  min-width:18px;
+  height:18px;
+  border-radius:9px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:0 5px;
+}
+.nav-item:hover{background:rgba(255,255,255,0.05);color:white;}
+.nav-item.active{
+  background:rgba(184,134,46,0.18);
+  color:white;
+  border-left-color:var(--brass);
+}
+.sidebar-foot{
+  padding:14px 20px 18px;
+  border-top:1px solid rgba(255,255,255,0.1);
+}
+.user-chip{
+  display:flex;
+  align-items:center;
+  gap:9px;
+  margin-bottom:10px;
+}
+.user-chip .avatar{
+  width:30px;height:30px;
+  border-radius:50%;
+  background:var(--brass);
+  color:white;
+  display:flex;align-items:center;justify-content:center;
+  font-weight:700;font-size:13px;
+  flex-shrink:0;
+}
+.user-chip .name{font-size:12.5px;font-weight:600;color:white;line-height:1.2;}
+.user-chip .role{font-size:10.5px;color:var(--brass-light);text-transform:capitalize;}
+
+.main{
+  flex:1;
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  height:100vh;
+  overflow-y:auto;
+}
+.topbar{
+  position:sticky;top:0;
+  background:var(--paper-raised);
+  border-bottom:1px solid var(--line);
+  padding:16px 32px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  z-index:10;
+}
+.topbar h2{
+  font-family:var(--font-display);
+  font-size:21px;
+  font-weight:600;
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.topbar .sub{font-size:12px;color:var(--ink-faint);font-weight:400;margin-top:2px;}
+.topbar-actions{display:flex;gap:10px;align-items:center;}
+
+.sync-pill{
+  display:flex;align-items:center;gap:6px;
+  font-size:11.5px;
+  color:var(--ink-faint);
+  padding:5px 10px;
+  border:1px solid var(--line);
+  border-radius:20px;
+}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:var(--ink-faint);}
+.sync-dot.ok{background:var(--sage);}
+.sync-dot.syncing{background:var(--brass);animation:pulse 1s infinite;}
+.sync-dot.err{background:var(--brick);}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.35;}}
+
+.content{padding:28px 32px 60px;flex:1;}
+
+/* ============ Generic UI bits ============ */
+.card{
+  background:var(--paper-raised);
+  border:1px solid var(--line);
+  border-radius:6px;
+  box-shadow:var(--shadow);
+}
+.card-pad{padding:22px 24px;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.card-pad > table, .card-pad > div > table{min-width:560px;}
+.section-title{
+  font-family:var(--font-display);
+  font-size:16px;
+  font-weight:600;
+  margin-bottom:14px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  flex-wrap:wrap;
+  gap:10px;
+}
+
+.stat-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px;}
+.stat-card{
+  background:var(--paper-raised);
+  border:1px solid var(--line);
+  border-left:4px solid var(--brass);
+  border-radius:6px;
+  padding:18px 20px;
+  box-shadow:var(--shadow);
+}
+.stat-card.income{border-left-color:var(--sage);}
+.stat-card.expense{border-left-color:var(--brick);}
+.stat-card .stat-label{font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-faint);margin-bottom:6px;}
+.stat-card .stat-value{font-family:var(--font-mono);font-size:24px;font-weight:600;font-variant-numeric:tabular-nums;}
+.stat-card.income .stat-value{color:var(--sage);}
+.stat-card.expense .stat-value{color:var(--brick);}
+.stat-card .stat-foot{font-size:11.5px;color:var(--ink-faint);margin-top:5px;}
+
+table{width:100%;border-collapse:collapse;}
+thead th{
+  text-align:left;
+  font-size:11px;
+  text-transform:uppercase;
+  letter-spacing:0.04em;
+  color:var(--ink-faint);
+  font-weight:600;
+  padding:8px 10px;
+  border-bottom:2px solid var(--ink);
+  white-space:nowrap;
+}
+tbody td{
+  padding:10px 10px;
+  border-bottom:1px solid var(--line-soft);
+  font-size:13.5px;
+  vertical-align:middle;
+}
+tbody tr:hover{background:rgba(184,134,46,0.05);}
+tbody tr:last-child td{border-bottom:1px solid var(--ink);}
+.text-right{text-align:right;}
+.text-center{text-align:center;}
+.amt-income{color:var(--sage);font-weight:600;}
+.amt-expense{color:var(--brick);font-weight:600;}
+.muted{color:var(--ink-faint);}
+.empty-state{
+  text-align:center;
+  padding:50px 20px;
+  color:var(--ink-faint);
+}
+.empty-state .ic{width:44px;height:44px;margin:0 auto 12px;opacity:0.4;}
+.empty-state .title{font-family:var(--font-display);font-size:16px;color:var(--ink-soft);margin-bottom:4px;}
+
+.toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;gap:12px;flex-wrap:wrap;}
+.toolbar-left{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+.search-box{
+  position:relative;
+}
+.search-box input{
+  padding:8px 12px 8px 34px;
+  border:1px solid var(--line);
+  border-radius:20px;
+  width:220px;
+  background:var(--paper);
+}
+.search-box svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);width:15px;height:15px;color:var(--ink-faint);}
+
+.badge{
+  display:inline-flex;
+  align-items:center;
+  gap:4px;
+  padding:3px 9px;
+  border-radius:20px;
+  font-size:11px;
+  font-weight:600;
+}
+.badge-sage{background:var(--sage-light);color:var(--sage);}
+.badge-brick{background:var(--brick-light);color:var(--brick);}
+.badge-brass{background:var(--brass-light);color:var(--brass-dark);}
+.badge-grey{background:var(--line-soft);color:var(--ink-soft);}
+
+/* Stamp - signature element */
+.stamp{
+  width:88px;height:88px;
+  border-radius:50%;
+  border:3px solid currentColor;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  transform:rotate(-9deg);
+  position:relative;
+  font-family:var(--font-display);
+}
+.stamp::before{
+  content:"";
+  position:absolute;
+  inset:6px;
+  border:1px dashed currentColor;
+  border-radius:50%;
+  opacity:0.5;
+}
+.stamp.profit{color:var(--sage);}
+.stamp.loss{color:var(--brick);}
+.stamp .stamp-word{font-size:13px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;}
+.stamp .stamp-amt{font-size:11px;font-weight:600;margin-top:2px;font-family:var(--font-mono);}
+
+/* Modal */
+.modal-overlay{
+  position:fixed;inset:0;
+  background:rgba(27,42,74,0.45);
+  display:none;
+  align-items:center;justify-content:center;
+  z-index:200;
+  padding:20px;
+}
+.modal-overlay.active{display:flex;}
+.modal{
+  background:var(--paper-raised);
+  border-radius:8px;
+  width:100%;
+  max-width:520px;
+  max-height:88vh;
+  overflow-y:auto;
+  box-shadow:var(--shadow-lg);
+}
+.modal.modal-wide{max-width:760px;}
+.modal-head{
+  padding:18px 24px;
+  border-bottom:1px solid var(--line);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  position:sticky;top:0;
+  background:var(--paper-raised);
+}
+.modal-head h3{font-family:var(--font-display);font-size:17px;font-weight:600;}
+.modal-close{
+  width:28px;height:28px;
+  border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  color:var(--ink-faint);
+  font-size:18px;
+  border:none;background:transparent;
+}
+.modal-close:hover{background:var(--line-soft);color:var(--ink);}
+.modal-body{padding:22px 24px;}
+.modal-foot{
+  padding:16px 24px;
+  border-top:1px solid var(--line);
+  display:flex;
+  justify-content:flex-end;
+  gap:10px;
+}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.form-grid .full{grid-column:1/-1;}
+
+/* Reusable responsive two-column layouts (collapse to 1 column on mobile, see breakpoint below) */
+.grid-2col{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+.grid-main-side{display:grid;grid-template-columns:1fr 320px;gap:20px;align-items:start;}
+.grid-pnl{display:grid;grid-template-columns:1.4fr 1fr;gap:20px;align-items:start;}
+
+.toast-wrap{position:fixed;bottom:24px;right:24px;z-index:300;display:flex;flex-direction:column;gap:10px;}
+.toast{
+  background:var(--ink);
+  color:white;
+  padding:12px 18px;
+  border-radius:6px;
+  font-size:13px;
+  box-shadow:var(--shadow-lg);
+  display:flex;align-items:center;gap:10px;
+  min-width:240px;
+  animation:slideIn .25s ease;
+  border-left:4px solid var(--brass);
+}
+.toast.success{border-left-color:var(--sage);}
+.toast.error{border-left-color:var(--brick);}
+@keyframes slideIn{from{transform:translateX(30px);opacity:0;}to{transform:translateX(0);opacity:1;}}
+
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:20px;}
+.tab-btn{
+  padding:9px 16px;
+  font-size:13px;
+  font-weight:600;
+  color:var(--ink-faint);
+  border-bottom:2px solid transparent;
+  background:transparent;border:none;
+}
+.tab-btn.active{color:var(--ink);border-bottom-color:var(--brass);}
+
+/* Print area: hidden on screen, shown via window.print in popup window instead */
+.icon{width:16px;height:16px;display:inline-block;vertical-align:middle;}
+
+select.filter-select, input.filter-input{
+  padding:7px 10px;
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  background:var(--paper);
+  font-size:13px;
+}
+
+.role-pill{font-size:10px;text-transform:uppercase;letter-spacing:0.04em;padding:2px 7px;border-radius:10px;font-weight:700;}
+.role-admin{background:var(--brass-light);color:var(--brass-dark);}
+.role-manager{background:#DCE6F2;color:#2c4a73;}
+.role-staff{background:var(--line-soft);color:var(--ink-soft);}
+
+/* ============ Chat ============ */
+.chat-shell{
+  display:flex;
+  height:calc(100vh - 160px);
+  min-height:480px;
+  border:1px solid var(--line);
+  border-radius:8px;
+  overflow:hidden;
+  background:var(--paper-raised);
+  box-shadow:var(--shadow);
+}
+.chat-sidebar{
+  width:270px;
+  flex-shrink:0;
+  border-right:1px solid var(--line);
+  overflow-y:auto;
+  background:var(--paper);
+}
+.chat-group-label{
+  font-size:10.5px;
+  text-transform:uppercase;
+  letter-spacing:0.05em;
+  color:var(--ink-faint);
+  padding:14px 16px 6px;
+  font-weight:600;
+}
+.chat-empty-contacts{padding:24px 16px;color:var(--ink-faint);font-size:13px;text-align:center;}
+.chat-contact{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:10px 14px;
+  cursor:pointer;
+  border-left:3px solid transparent;
+  transition:background .12s;
+}
+.chat-contact:hover{background:var(--line-soft);}
+.chat-contact.active{background:var(--brass-light);border-left-color:var(--brass);}
+.chat-contact-avatar{
+  width:34px;height:34px;border-radius:50%;
+  background:var(--ink);color:white;
+  display:flex;align-items:center;justify-content:center;
+  font-weight:700;font-size:14px;flex-shrink:0;
+}
+.chat-contact-info{flex:1;min-width:0;}
+.chat-contact-name{font-size:13px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.chat-contact-preview{font-size:11.5px;color:var(--ink-faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:170px;}
+.chat-main{flex:1;display:flex;flex-direction:column;min-width:0;}
+.chat-empty-state{display:flex;align-items:center;justify-content:center;flex:1;}
+.chat-thread-head{
+  display:flex;align-items:center;gap:10px;
+  padding:14px 18px;
+  border-bottom:1px solid var(--line);
+  background:var(--paper-raised);
+}
+.chat-messages{
+  flex:1;
+  overflow-y:auto;
+  padding:18px 20px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  background:
+    repeating-linear-gradient(180deg, transparent 0, transparent 31px, var(--line-soft) 31px, var(--line-soft) 32px),
+    var(--paper);
+}
+.chat-empty-thread{text-align:center;color:var(--ink-faint);font-size:13px;margin:auto;}
+.chat-bubble-row{display:flex;}
+.chat-bubble-row.mine{justify-content:flex-end;}
+.chat-bubble-row.theirs{justify-content:flex-start;}
+.chat-bubble{
+  max-width:62%;
+  padding:9px 13px;
+  border-radius:12px;
+  font-size:13.5px;
+  line-height:1.4;
+  box-shadow:var(--shadow);
+}
+.chat-bubble-row.mine .chat-bubble{background:var(--ink);color:white;border-bottom-right-radius:3px;}
+.chat-bubble-row.theirs .chat-bubble{background:var(--paper-raised);color:var(--ink);border:1px solid var(--line);border-bottom-left-radius:3px;}
+.chat-bubble-text{white-space:pre-wrap;word-break:break-word;}
+.chat-bubble-time{font-size:10px;opacity:0.6;margin-top:4px;text-align:right;}
+.chat-input-row{
+  display:flex;
+  gap:10px;
+  padding:14px 18px;
+  border-top:1px solid var(--line);
+  background:var(--paper-raised);
+}
+.chat-input-row input{
+  flex:1;
+  padding:10px 14px;
+  border:1px solid var(--line);
+  border-radius:20px;
+  background:var(--paper);
+  font-size:13.5px;
+}
+.chat-input-row input:focus{outline:none;border-color:var(--brass);}
+@media (max-width: 880px){
+  .chat-shell{flex-direction:column;height:auto;}
+  .chat-sidebar{width:100%;max-height:200px;border-right:none;border-bottom:1px solid var(--line);}
+  .chat-main{min-height:420px;}
+}
+
+@media (max-width: 880px){
+  .sidebar{position:fixed;left:-230px;top:0;bottom:0;z-index:150;transition:left .2s;}
+  .sidebar.open{left:0;}
+  .topbar{padding:14px 18px;}
+  .content{padding:18px 16px 60px;}
+  .form-grid{grid-template-columns:1fr;}
+  .grid-2col, .grid-main-side, .grid-pnl{grid-template-columns:1fr;}
+  .menu-toggle{display:flex !important;}
+}
+@media (max-width: 480px){
+  .card-pad > table, .card-pad > div > table{min-width:480px;}
+}
+.menu-toggle{display:none;width:34px;height:34px;align-items:center;justify-content:center;border:1px solid var(--line);border-radius:6px;background:transparent;}
+
+@media print{
+  body *{visibility:hidden;}
+}
+</style>
+</head>
+<body>
+
+<!-- ============== LOGIN SCREEN ============== -->
+<div id="loginScreen">
+  <div class="login-card">
+    <div class="login-brand">
+      <div class="mark">ख</div>
+      <h1>Khata</h1>
+      <p>Branch Accounts &amp; Ledger</p>
+    </div>
+    <div class="login-error" id="loginError"></div>
+    <form id="loginForm" onsubmit="return false;">
+      <div class="field">
+        <label>Username</label>
+        <input type="text" id="loginUsername" autocomplete="username" placeholder="e.g. admin">
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input type="password" id="loginPassword" autocomplete="current-password" placeholder="••••••••">
+      </div>
+      <button class="btn btn-primary" id="loginBtn" type="submit">Sign in</button>
+    </form>
+    <p class="login-footnote" id="loginFootnote">First time? Default login is <b>admin</b> / <b>admin123</b> — change the password after signing in.</p>
+  </div>
+</div>
+
+<!-- ============== APP SHELL ============== -->
+<div id="appShell">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="mark">ख</div>
+      <div>
+        <h1>Khata</h1>
+        <p>Branch Accounts</p>
+      </div>
+    </div>
+
+    <div class="branch-indicator" id="branchIndicator">
+      <div class="label">Current branch</div>
+      <div class="value" id="branchIndicatorName">—</div>
+      <select class="branch-switch-select" id="branchSwitchSelect" style="display:none;" onchange="App.switchBranch(this.value)"></select>
+    </div>
+
+    <nav class="nav" id="navMenu"></nav>
+
+    <div class="sidebar-foot">
+      <div class="user-chip">
+        <div class="avatar" id="userAvatar">A</div>
+        <div>
+          <div class="name" id="userChipName">—</div>
+          <div class="role" id="userChipRole">—</div>
+        </div>
+      </div>
+      <button class="btn btn-secondary btn-block btn-sm" onclick="App.logout()">Sign out</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <button class="menu-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
+        <div>
+          <h2 id="pageTitle">Dashboard</h2>
+          <div class="sub" id="pageSubtitle"></div>
+        </div>
+      </div>
+      <div class="topbar-actions">
+        <div class="sync-pill" id="syncPill">
+          <span class="sync-dot" id="syncDot"></span>
+          <span id="syncLabel">Not connected</span>
+        </div>
+      </div>
+    </div>
+    <div class="content" id="pageContent"></div>
+  </main>
+</div>
+
+<div class="toast-wrap" id="toastWrap"></div>
+
+<!-- ============== MODALS ============== -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal" id="modalBox"></div>
+</div>
+
+<script>
+/* =========================================================================
+   KHATA — Branch Accounting App
+   Single-file HTML/CSS/JS, localStorage persistence + Google Sheets sync
+   ========================================================================= */
+
+/* ---------------- CONFIG ---------------- */
+// Paste your deployed Google Apps Script Web App URL here to enable sync.
+const SHEETS_WEBAPP_URL = "PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE";
+
+const DB_KEY = "khata_db_v1";
+const SESSION_KEY = "khata_session_v1";
+
+/* ---------------- BS CALENDAR ---------------- */
+// Verified against multiple independent sources (englishtonepali.com calendar pages,
+// official Nepali New Year announcements, and the widely-used "nepali-date-converter"
+// npm package's date-config data) to ensure accurate BS<->AD conversion.
+const BS_DATA = {
+  2070:[31,31,31,32,31,31,29,30,30,29,30,30],
+  2071:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2072:[31,32,31,32,31,30,30,29,30,29,30,30],
+  2073:[31,32,31,32,31,30,30,30,29,29,30,31],
+  2074:[31,31,31,32,31,31,30,29,30,29,30,30],
+  2075:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2076:[31,32,31,32,31,30,30,30,29,29,30,30],
+  2077:[31,32,31,32,31,30,30,30,29,30,29,31],
+  2078:[31,31,31,32,31,31,30,29,30,29,30,30],
+  2079:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2080:[31,32,31,32,31,30,30,30,29,29,30,30],
+  2081:[31,32,31,32,31,30,30,30,29,30,29,31],
+  2082:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2083:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2084:[31,32,31,32,31,30,30,30,29,29,30,31],
+  2085:[30,32,31,32,31,30,30,30,29,30,29,31],
+  2086:[31,31,32,31,31,31,30,29,30,29,30,30],
+  2087:[31,31,32,31,31,31,30,30,29,30,30,30],
+  2088:[30,31,32,32,30,31,30,30,29,30,30,30],
+  2089:[30,32,31,32,31,30,30,30,29,30,30,30],
+  2090:[30,32,31,32,31,30,30,30,29,30,30,30]
+};
+const BS_MONTHS=["Baishakh","Jestha","Ashadh","Shrawan","Bhadra","Ashwin","Kartik","Mangsir","Poush","Magh","Falgun","Chaitra"];
+const BS_EPOCH_AD = new Date(2013,3,14); // 2070-01-01 BS = 2013-04-14 AD (verified)
+const BS_EPOCH_YEAR = 2070;
+
+function bsToAd(by,bm,bd){
+  let days=0;
+  for(let y=BS_EPOCH_YEAR;y<by;y++){
+    const yd = BS_DATA[y] || BS_DATA[2080];
+    days += yd.reduce((a,b)=>a+b,0);
+  }
+  const yd = BS_DATA[by] || BS_DATA[2080];
+  for(let m=0;m<bm-1;m++){ days += yd[m]; }
+  days += (bd-1);
+  const ad = new Date(BS_EPOCH_AD);
+  ad.setDate(ad.getDate()+days);
+  return ad;
+}
+function adToBs(adDate){
+  let diff = Math.floor((adDate - BS_EPOCH_AD) / 86400000);
+  let by = BS_EPOCH_YEAR, bm=0, bd=1;
+  while(true){
+    const yd = BS_DATA[by] || BS_DATA[2080];
+    const yearTotal = yd.reduce((a,b)=>a+b,0);
+    if(diff < yearTotal) break;
+    diff -= yearTotal; by++;
+  }
+  const yd = BS_DATA[by] || BS_DATA[2080];
+  for(let m=0;m<12;m++){
+    if(diff < yd[m]){ bm=m+1; bd=diff+1; break; }
+    diff -= yd[m];
+  }
+  return {y:by,m:bm,d:bd};
+}
+function todayBs(){ return adToBs(new Date()); }
+function bsString(b){ return `${b.y}-${String(b.m).padStart(2,'0')}-${String(b.d).padStart(2,'0')}`; }
+function bsLabel(b){ return `${b.d} ${BS_MONTHS[b.m-1]} ${b.y}`; }
+function bsDaysInMonth(by,bm){ const yd = BS_DATA[by] || BS_DATA[2080]; return yd[bm-1]; }
+function todayBsString(){ return bsString(todayBs()); }
+function bsStringToObj(s){ const [y,m,d]=s.split('-').map(Number); return {y,m,d}; }
+function bsLabelFromString(s){ return bsLabel(bsStringToObj(s)); }
+
+/* ---------------- UTILITIES ---------------- */
+function uid(prefix){ return prefix+'_'+Date.now().toString(36)+Math.random().toString(36).slice(2,8); }
+function fmtRs(n){
+  n = Number(n)||0;
+  const neg = n<0; n=Math.abs(n);
+  const parts = n.toFixed(2).split('.');
+  let intPart = parts[0];
+  let lastThree = intPart.length>3 ? intPart.substring(intPart.length-3) : intPart;
+  let other = intPart.length>3 ? intPart.substring(0,intPart.length-3) : '';
+  other = other.replace(/\B(?=(\d{2})+(?!\d))/g, ",");
+  const formatted = (other?other+',':'')+lastThree+'.'+parts[1];
+  return (neg?'-':'')+'Rs. '+formatted;
+}
+function escapeHtml(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function toast(msg,type){
+  const wrap = document.getElementById('toastWrap');
+  const el = document.createElement('div');
+  el.className = 'toast '+(type||'');
+  el.textContent = msg;
+  wrap.appendChild(el);
+  setTimeout(()=>{ el.style.opacity='0'; el.style.transition='opacity .3s'; setTimeout(()=>el.remove(),300); }, 3200);
+}
+function hashPass(pw){
+  let h=0;
+  for(let i=0;i<pw.length;i++){ h = (Math.imul(31,h) + pw.charCodeAt(i))|0; }
+  return 'h'+h.toString(36)+'_'+pw.length;
+}
+
+/* ---------------- DATA MODEL ---------------- */
+const DEFAULT_INCOME_CATEGORIES = ["Sales","Service Income","Commission","Rent Received","Interest Income","Donation","Other Income"];
+const DEFAULT_EXPENSE_CATEGORIES = ["Rent","Salary","Utilities","Transport","Supplies","Maintenance","Marketing","Tax","Bank Charges","Other Expense"];
+
+function defaultDb(){
+  return {
+    branches: [
+      { id: uid('br'), name: "Main Branch", location: "", createdAt: todayBsString() }
+    ],
+    users: [
+      { id: uid('usr'), username:"admin", passHash: hashPass("admin123"), name:"Administrator", role:"admin", branchId:null, active:true, createdAt: todayBsString() }
+    ],
+    incomeCategories: { byBranch:{} , default: DEFAULT_INCOME_CATEGORIES.slice() },
+    expenseCategories: { byBranch:{}, default: DEFAULT_EXPENSE_CATEGORIES.slice() },
+    incomes: [],
+    expenses: [],
+    companySettings: { byBranch:{} },
+    voucherCounters: { byBranch:{} },
+    parties: [],
+    partyTransactions: [],
+    messages: [],
+    meta: { lastSyncAt:null }
+  };
+}
+
+let DB = null;
+function loadDb(){
+  const raw = localStorage.getItem(DB_KEY);
+  if(raw){
+    try{ DB = JSON.parse(raw); }catch(e){ DB = defaultDb(); }
+  } else {
+    DB = defaultDb();
+  }
+  if(!DB.incomeCategories) DB.incomeCategories = { byBranch:{}, default: DEFAULT_INCOME_CATEGORIES.slice() };
+  if(!DB.expenseCategories) DB.expenseCategories = { byBranch:{}, default: DEFAULT_EXPENSE_CATEGORIES.slice() };
+  if(!DB.companySettings) DB.companySettings = { byBranch:{} };
+  if(!DB.voucherCounters) DB.voucherCounters = { byBranch:{} };
+  if(!DB.parties) DB.parties = [];
+  if(!DB.partyTransactions) DB.partyTransactions = [];
+  if(!DB.messages) DB.messages = [];
+  if(!DB.meta) DB.meta = { lastSyncAt:null };
+  saveDbLocalOnly();
+}
+function saveDbLocalOnly(){
+  localStorage.setItem(DB_KEY, JSON.stringify(DB));
+}
+function saveDb(){
+  saveDbLocalOnly();
+  queueSync();
+}
+
+/* ---------------- CATEGORY HELPERS ---------------- */
+function getIncomeCategories(branchId){
+  return (DB.incomeCategories.byBranch[branchId] && DB.incomeCategories.byBranch[branchId].length)
+    ? DB.incomeCategories.byBranch[branchId] : DB.incomeCategories.default;
+}
+function getExpenseCategories(branchId){
+  return (DB.expenseCategories.byBranch[branchId] && DB.expenseCategories.byBranch[branchId].length)
+    ? DB.expenseCategories.byBranch[branchId] : DB.expenseCategories.default;
+}
+
+/* ---------------- COMPANY SETTINGS HELPERS ---------------- */
+function getCompanySettings(branchId){
+  return DB.companySettings.byBranch[branchId] || { name:'', address:'', pan:'', logo:'' };
+}
+function setCompanySettings(branchId, settings){
+  DB.companySettings.byBranch[branchId] = settings;
+}
+
+/* ---------------- VOUCHER NUMBERING ---------------- */
+// Sequential per branch, per BS year, per kind (income/expense/party_payment/party_receipt). Resets when the BS year changes.
+function nextVoucherNo(branchId, kind){
+  const bsYear = todayBs().y;
+  if(!DB.voucherCounters.byBranch[branchId]) DB.voucherCounters.byBranch[branchId] = {};
+  const branchCounters = DB.voucherCounters.byBranch[branchId];
+  const counterKey = kind+'_'+bsYear;
+  const seq = (branchCounters[counterKey] || 0) + 1;
+  branchCounters[counterKey] = seq;
+  const prefixMap = { income:'INV', expense:'EXP', party_payment:'PV', party_receipt:'RV' };
+  const prefix = prefixMap[kind] || 'V';
+  return `${prefix}-${bsYear}-${String(seq).padStart(3,'0')}`;
+}
+
+/* ---------------- PARTY LEDGER HELPERS ---------------- */
+function branchParties(branchId){ return DB.parties.filter(p=>p.branchId===branchId); }
+function partyTransactionsFor(partyId){ return DB.partyTransactions.filter(t=>t.partyId===partyId).sort((a,c)=>a.date.localeCompare(c.date) || (a.createdAt||'').localeCompare(c.createdAt||'')); }
+// Balance convention: positive balance = party owes us (receivable); negative = we owe the party (payable).
+// 'receipt' (money received FROM party) decreases what they owe us. 'payment' (money paid TO party) increases what they owe us back... 
+// Simpler ledger convention used here: 'bill'/'receivable' increases balance, 'payment' (we pay them) decreases balance owed BY them,
+// 'receipt' (they pay us) decreases balance owed BY them. We track a single signed runningBalance per party:
+//   type 'payment'  (we pay the party)  -> balance -= amount  (reduces what we owe them, or increases what they owe us)
+//   type 'receipt'  (party pays us)     -> balance += amount  (increases what we owe them, or reduces what they owe us)
+// To keep this intuitive for small business use we expose it simply as: Balance = Total Receipts - Total Payments,
+// shown as "Due from Party" (positive) or "Due to Party" (negative).
+function partyBalance(partyId){
+  const txns = partyTransactionsFor(partyId);
+  let bal = 0;
+  txns.forEach(t=>{ bal += (t.type==='receipt' ? t.amount : -t.amount); });
+  return bal;
+}
+
+/* ---------------- CHAT HELPERS ---------------- */
+function threadId(userA, userB){ return [userA, userB].sort().join('__'); }
+function chatThreadMessages(otherUserId){
+  const me = currentUser().id;
+  const tid = threadId(me, otherUserId);
+  return DB.messages.filter(m=>m.threadId===tid).sort((a,c)=>a.createdAt.localeCompare(c.createdAt));
+}
+function chatContacts(){
+  const me = currentUser();
+  return DB.users.filter(u=>u.id!==me.id && u.active);
+}
+function unreadCountFrom(otherUserId){
+  const me = currentUser().id;
+  const tid = threadId(me, otherUserId);
+  return DB.messages.filter(m=>m.threadId===tid && m.toUserId===me && !m.read).length;
+}
+function unreadMessageCount(){
+  if(!SESSION || !DB.users.find(u=>u.id===SESSION.userId)) return 0;
+  const me = currentUser().id;
+  return DB.messages.filter(m=>m.toUserId===me && !m.read).length;
+}
+function sendMessage(toUserId, text){
+  const me = currentUser().id;
+  if(!text || !text.trim()) return;
+  DB.messages.push({
+    id: uid('msg'),
+    threadId: threadId(me, toUserId),
+    fromUserId: me,
+    toUserId: toUserId,
+    text: text.trim(),
+    read: false,
+    createdAt: new Date().toISOString()
+  });
+  saveDb();
+}
+function markThreadRead(otherUserId){
+  const me = currentUser().id;
+  const tid = threadId(me, otherUserId);
+  let changed = false;
+  DB.messages.forEach(m=>{ if(m.threadId===tid && m.toUserId===me && !m.read){ m.read = true; changed = true; } });
+  if(changed) saveDbLocalOnly(); // local-only; avoid spamming sync just for read receipts
+}
+function userDisplayName(userId){
+  const u = DB.users.find(x=>x.id===userId);
+  return u ? (u.name || u.username) : 'Unknown user';
+}
+function branchNameOf(branchId){
+  const b = DB.branches.find(x=>x.id===branchId);
+  return b ? b.name : (branchId ? 'Unknown branch' : 'All branches');
+}
+
+let SESSION = null;
+function loadSession(){
+  const raw = sessionStorage.getItem(SESSION_KEY) || localStorage.getItem(SESSION_KEY);
+  if(raw){ try{ SESSION = JSON.parse(raw); }catch(e){ SESSION=null; } }
+}
+function saveSession(remember){
+  const str = JSON.stringify(SESSION);
+  sessionStorage.setItem(SESSION_KEY, str);
+  if(remember) localStorage.setItem(SESSION_KEY, str);
+  else localStorage.removeItem(SESSION_KEY);
+}
+function clearSession(){
+  SESSION = null;
+  sessionStorage.removeItem(SESSION_KEY);
+  localStorage.removeItem(SESSION_KEY);
+}
+function currentUser(){ return DB.users.find(u=>u.id===SESSION.userId); }
+function activeBranchId(){
+  const u = currentUser();
+  if(u.role==='admin') return SESSION.branchId || (DB.branches[0] && DB.branches[0].id);
+  return u.branchId;
+}
+function activeBranch(){ return DB.branches.find(b=>b.id===activeBranchId()); }
+function canManageUsers(){ const u=currentUser(); return u.role==='admin'||u.role==='manager'; }
+function isAdmin(){ return currentUser().role==='admin'; }
+
+/* ---------------- SYNC ---------------- */
+let syncTimer = null;
+let syncInFlight = false;
+function setSyncStatus(state, label){
+  const dot = document.getElementById('syncDot');
+  const lbl = document.getElementById('syncLabel');
+  if(!dot) return;
+  dot.className = 'sync-dot '+(state||'');
+  lbl.textContent = label;
+}
+function sheetsConfigured(){
+  return SHEETS_WEBAPP_URL && SHEETS_WEBAPP_URL.indexOf('http')===0;
+}
+function queueSync(){
+  if(!sheetsConfigured()){ setSyncStatus('', 'Not connected'); return; }
+  clearTimeout(syncTimer);
+  setSyncStatus('syncing','Pending sync…');
+  syncTimer = setTimeout(doSync, 1500);
+}
+function doSync(){
+  if(!sheetsConfigured()) return;
+  if(syncInFlight) { syncTimer = setTimeout(doSync, 1500); return; }
+  syncInFlight = true;
+  setSyncStatus('syncing','Syncing…');
+  DB.meta.lastSyncAt = new Date().toISOString(); // stamp BEFORE sending so the server records the exact version we're pushing
+  const payload = { action:'sync', data: DB };
+  fetch(SHEETS_WEBAPP_URL, {
+    method:'POST',
+    mode:'no-cors',
+    headers:{ 'Content-Type':'text/plain;charset=utf-8' },
+    body: JSON.stringify(payload)
+  }).then(()=>{
+    syncInFlight = false;
+    localStorage.setItem(DB_KEY, JSON.stringify(DB));
+    setSyncStatus('ok','Synced just now');
+  }).catch(()=>{
+    syncInFlight = false;
+    setSyncStatus('err','Sync failed — retrying');
+    syncTimer = setTimeout(doSync, 8000);
+  });
+}
+function pullFromSheets(silent){
+  if(!sheetsConfigured()){ if(!silent) toast('Add your Apps Script Web App URL first.', 'error'); return; }
+  if(!silent) setSyncStatus('syncing','Pulling latest…');
+  const cbName = 'khataCb_'+Date.now();
+  window[cbName] = function(resp){
+    delete window[cbName];
+    if(resp && resp.data){
+      DB = resp.data;
+      saveDbLocalOnly();
+      if(!silent) toast('Pulled latest data from Google Sheets.', 'success');
+      setSyncStatus('ok', silent ? 'Updated just now' : 'Synced just now');
+      App.render();
+    } else {
+      setSyncStatus('err','Pull failed');
+      if(!silent) toast('No data returned from Sheets.', 'error');
+    }
+  };
+  const script = document.createElement('script');
+  script.src = SHEETS_WEBAPP_URL + (SHEETS_WEBAPP_URL.includes('?')?'&':'?') + 'action=get&callback='+cbName;
+  script.onerror = function(){ if(!silent) setSyncStatus('err','Pull failed'); if(!silent) toast('Could not reach Google Sheets.', 'error'); delete window[cbName]; };
+  document.body.appendChild(script);
+  setTimeout(()=>script.remove(), 10000);
+}
+
+/* ---------------- LIVE UPDATES ACROSS BROWSERS ----------------
+   Apps Script can't push to the browser, so "real-time" here means a cheap
+   poll: every few seconds we ask the server for just its current version
+   stamp (one tiny cell read, not the whole dataset). Only when that stamp
+   differs from what we last saw do we pull the full dataset. We skip a
+   cycle entirely while a modal is open or a sync is mid-flight, so nobody
+   gets their form yanked out from under them while typing. */
+let remotePollTimer = null;
+function startRemotePolling(){
+  clearInterval(remotePollTimer);
+  if(!sheetsConfigured()) return;
+  remotePollTimer = setInterval(checkRemoteVersion, 7000);
+}
+function checkRemoteVersion(){
+  if(!sheetsConfigured() || syncInFlight) return;
+  if(document.getElementById('modalOverlay')?.classList.contains('active')) return;
+  const cbName = 'khataVer_'+Date.now();
+  window[cbName] = function(resp){
+    delete window[cbName];
+    if(resp && resp.ok && resp.lastSyncAt && resp.lastSyncAt !== (DB.meta && DB.meta.lastSyncAt)){
+      pullFromSheets(true);
+    }
+  };
+  const script = document.createElement('script');
+  script.src = SHEETS_WEBAPP_URL + (SHEETS_WEBAPP_URL.includes('?')?'&':'?') + 'action=version&callback='+cbName;
+  script.onerror = function(){ delete window[cbName]; };
+  document.body.appendChild(script);
+  setTimeout(()=>script.remove(), 8000);
+}
+
+const ICONS = {
+  dashboard:'<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>',
+  income:'<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7"/></svg>',
+  expense:'<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg>',
+  pnl:'<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg>',
+  report:'<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2h9l5 5v15H6z"/><path d="M14 2v6h6M9 13h6M9 17h6M9 9h2"/></svg>',
+  branch:'<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 9h.01M9 13h.01M15 9h.01M15 13h.01M9 21v-4h6v4"/></svg>',
+  user:'<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-7 8-7s8 3 8 7"/></svg>',
+  settings:'<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
+  plus:'<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>',
+  print:'<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6z"/></svg>',
+  edit:'<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>',
+  trash:'<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/></svg>',
+  party:'<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17.5" cy="8.5" r="2.4"/><path d="M14.5 13.2c2.6.3 4.6 2.5 4.9 5.3"/></svg>',
+  chat:'<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>',
+  send:'<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>',
+};
+
+/* ---------------- ROUTER / APP SHELL ---------------- */
+const App = {
+  route: 'dashboard',
+  routeParam: null,
+
+  init(){
+    loadDb();
+    loadSession();
+    if(SESSION && DB.users.find(u=>u.id===SESSION.userId && u.active)){
+      this.showApp();
+    } else {
+      this.showLogin();
+    }
+    document.getElementById('loginForm').addEventListener('submit', (e)=>{ e.preventDefault(); this.login(); });
+  },
+
+  showLogin(){
+    document.getElementById('loginScreen').style.display='flex';
+    document.getElementById('appShell').classList.remove('active');
+  },
+
+  login(){
+    const uname = document.getElementById('loginUsername').value.trim();
+    const pw = document.getElementById('loginPassword').value;
+    const errEl = document.getElementById('loginError');
+    errEl.classList.remove('show');
+    if(!uname || !pw){ errEl.textContent='Enter both username and password.'; errEl.classList.add('show'); return; }
+    const user = DB.users.find(u=>u.username.toLowerCase()===uname.toLowerCase());
+    if(!user || user.passHash !== hashPass(pw)){
+      errEl.textContent = 'Incorrect username or password.';
+      errEl.classList.add('show');
+      return;
+    }
+    if(!user.active){
+      errEl.textContent = 'This account has been disabled. Contact your admin.';
+      errEl.classList.add('show');
+      return;
+    }
+    SESSION = { userId:user.id, branchId: user.role==='admin' ? (DB.branches[0]&&DB.branches[0].id) : user.branchId };
+    saveSession(true);
+    document.getElementById('loginUsername').value='';
+    document.getElementById('loginPassword').value='';
+    this.showApp();
+  },
+
+  logout(){
+    clearSession();
+    location.reload();
+  },
+
+  showApp(){
+    document.getElementById('loginScreen').style.display='none';
+    document.getElementById('appShell').classList.add('active');
+    chatActiveUserId = null; // avoid carrying over a stale conversation from a previous session/user
+    this.buildNav();
+    this.renderUserChip();
+    this.renderBranchIndicator();
+    if(sheetsConfigured()){ setSyncStatus('ok','Connected'); } else { setSyncStatus('','Not connected'); }
+    this.navigate('dashboard');
+    startChatPolling();
+    startRemotePolling();
+  },
+
+  renderUserChip(){
+    const u = currentUser();
+    document.getElementById('userAvatar').textContent = (u.name||u.username).charAt(0).toUpperCase();
+    document.getElementById('userChipName').textContent = u.name || u.username;
+    document.getElementById('userChipRole').textContent = u.role;
+  },
+
+  renderBranchIndicator(){
+    const u = currentUser();
+    const nameEl = document.getElementById('branchIndicatorName');
+    const sel = document.getElementById('branchSwitchSelect');
+    if(u.role==='admin'){
+      sel.style.display='block';
+      sel.innerHTML = DB.branches.map(b=>`<option value="${b.id}" ${b.id===activeBranchId()?'selected':''}>${escapeHtml(b.name)}</option>`).join('');
+      nameEl.textContent='';
+      if(DB.branches.length===0){ sel.style.display='none'; nameEl.textContent='No branches yet'; }
+    } else {
+      sel.style.display='none';
+      const b = activeBranch();
+      nameEl.textContent = b ? b.name : 'No branch assigned';
+    }
+  },
+
+  switchBranch(branchId){
+    SESSION.branchId = branchId;
+    saveSession(!!localStorage.getItem(SESSION_KEY));
+    this.navigate(this.route);
+  },
+
+  buildNav(){
+    const u = currentUser();
+    const items = [
+      {key:'dashboard', label:'Dashboard', icon:ICONS.dashboard},
+      {key:'income', label:'Income', icon:ICONS.income},
+      {key:'expenses', label:'Expenses', icon:ICONS.expense},
+      {key:'parties', label:'Party Ledger', icon:ICONS.party},
+      {key:'pnl', label:'Profit &amp; Loss', icon:ICONS.pnl},
+      {key:'reports', label:'Reports', icon:ICONS.report},
+    ];
+    const adminItems = [];
+    if(u.role==='admin'){
+      adminItems.push({key:'branches', label:'Branches', icon:ICONS.branch});
+    }
+    if(u.role==='admin' || u.role==='manager'){
+      adminItems.push({key:'users', label:'Users', icon:ICONS.user});
+    }
+    adminItems.push({key:'settings', label:'Settings', icon:ICONS.settings});
+
+    const nav = document.getElementById('navMenu');
+    let html = '<div class="nav-section-label">Accounts</div>';
+    items.forEach(it=>{ html += navItemHtml(it); });
+    html += '<div class="nav-section-label">Connect</div>';
+    html += navItemHtml({key:'chat', label:'Chat', icon:ICONS.chat}, true);
+    html += '<div class="nav-section-label">Manage</div>';
+    adminItems.forEach(it=>{ html += navItemHtml(it); });
+    nav.innerHTML = html;
+    function navItemHtml(it, withBadge){
+      const unread = withBadge ? unreadMessageCount() : 0;
+      return `<div class="nav-item" data-route="${it.key}" onclick="App.navigate('${it.key}')">
+        <span class="ic">${it.icon}</span>${it.label}
+        ${unread>0?`<span class="nav-badge">${unread}</span>`:''}
+      </div>`;
+    }
+  },
+
+  navigate(route, param){
+    this.route = route;
+    this.routeParam = param;
+    document.querySelectorAll('.nav-item').forEach(el=>{
+      el.classList.toggle('active', el.dataset.route===route);
+    });
+    document.getElementById('sidebar').classList.remove('open');
+    this.render();
+  },
+
+  render(){
+    this.renderBranchIndicator();
+    const titleMap = {
+      dashboard:['Dashboard',"Overview of this branch's accounts"],
+      income:['Income','Record and review income entries'],
+      expenses:['Expenses','Record and review expense entries'],
+      parties:['Party Ledger','Track balances with suppliers, customers, and other parties'],
+      pnl:['Profit & Loss','Summary of income against expenses'],
+      reports:['Reports','Printable statements for any period'],
+      chat:['Chat','Message any user across any branch'],
+      branches:['Branches','Create and manage branches'],
+      users:['Users','Manage who can access each branch'],
+      settings:['Settings','Categories, password, and data tools'],
+    };
+    const [title,sub] = titleMap[this.route] || ['Dashboard',''];
+    document.getElementById('pageTitle').textContent = title;
+    document.getElementById('pageSubtitle').textContent = sub;
+    const content = document.getElementById('pageContent');
+    if(!Views[this.route]){ content.innerHTML='<p>Not found.</p>'; return; }
+    content.innerHTML = Views[this.route](this.routeParam);
+    if(this.route==='income') renderIncomeTable();
+    if(this.route==='expenses') renderExpenseTable();
+    if(this.route==='chat') this.buildNav(); // refresh unread badge after marking thread read
+    if(this.route==='pnl'){ wireBsDatePicker('pnlFrom'); wireBsDatePicker('pnlTo'); }
+  },
+
+  closeModal(){
+    document.getElementById('modalOverlay').classList.remove('active');
+    document.getElementById('modalBox').innerHTML='';
+  },
+  openModal(html, wide){
+    const box = document.getElementById('modalBox');
+    box.className = 'modal'+(wide?' modal-wide':'');
+    box.innerHTML = html;
+    document.getElementById('modalOverlay').classList.add('active');
+  }
+};
+
+const Views = {};
+
+/* ---------------- CALCULATION HELPERS ---------------- */
+function branchIncomes(branchId){ return DB.incomes.filter(i=>i.branchId===branchId); }
+function branchExpenses(branchId){ return DB.expenses.filter(e=>e.branchId===branchId); }
+function sumAmt(list){ return list.reduce((s,x)=>s+Number(x.amount||0),0); }
+function bsMonthKey(dateStr){ const o=bsStringToObj(dateStr); return `${o.y}-${String(o.m).padStart(2,'0')}`; }
+function inRange(dateStr, from, to){
+  if(from && dateStr < from) return false;
+  if(to && dateStr > to) return false;
+  return true;
+}
+function currentBsMonthRange(){
+  const t = todayBs();
+  const days = bsDaysInMonth(t.y,t.m);
+  return { from: bsString({y:t.y,m:t.m,d:1}), to: bsString({y:t.y,m:t.m,d:days}) };
+}
+
+/* ---------------- DASHBOARD VIEW ---------------- */
+Views.dashboard = function(){
+  const b = activeBranch();
+  if(!b){
+    return emptyStateNoBranch();
+  }
+  const range = currentBsMonthRange();
+  const incomesAll = branchIncomes(b.id);
+  const expensesAll = branchExpenses(b.id);
+  const incomesMonth = incomesAll.filter(i=>inRange(i.date, range.from, range.to));
+  const expensesMonth = expensesAll.filter(e=>inRange(e.date, range.from, range.to));
+  const incTotal = sumAmt(incomesAll);
+  const expTotal = sumAmt(expensesAll);
+  const incMonth = sumAmt(incomesMonth);
+  const expMonth = sumAmt(expensesMonth);
+  const netAll = incTotal - expTotal;
+  const netMonth = incMonth - expMonth;
+
+  const recent = [...incomesAll.map(x=>({...x,kind:'income'})), ...expensesAll.map(x=>({...x,kind:'expense'}))]
+    .sort((a,b2)=> b2.date.localeCompare(a.date) || (b2.createdAt||'').localeCompare(a.createdAt||''))
+    .slice(0,8);
+
+  return `
+  <div class="stat-row">
+    <div class="stat-card income">
+      <div class="stat-label">Income — this month (BS)</div>
+      <div class="stat-value num">${fmtRs(incMonth)}</div>
+      <div class="stat-foot">${incomesMonth.length} entries</div>
+    </div>
+    <div class="stat-card expense">
+      <div class="stat-label">Expenses — this month (BS)</div>
+      <div class="stat-value num">${fmtRs(expMonth)}</div>
+      <div class="stat-foot">${expensesMonth.length} entries</div>
+    </div>
+    <div class="stat-card" style="border-left-color:${netMonth>=0?'var(--sage)':'var(--brick)'};">
+      <div class="stat-label">Net — this month (BS)</div>
+      <div class="stat-value num" style="color:${netMonth>=0?'var(--sage)':'var(--brick)'};">${fmtRs(netMonth)}</div>
+      <div class="stat-foot">${netMonth>=0?'Profit':'Loss'} so far this month</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">All-time net</div>
+      <div class="stat-value num" style="color:${netAll>=0?'var(--sage)':'var(--brick)'};">${fmtRs(netAll)}</div>
+      <div class="stat-foot">Income ${fmtRs(incTotal)} · Expense ${fmtRs(expTotal)}</div>
+    </div>
+  </div>
+
+  <div class="card card-pad">
+    <div class="section-title">
+      Recent activity — ${escapeHtml(b.name)}
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-sage btn-sm" onclick="openIncomeForm()">${ICONS.plus} Add income</button>
+        <button class="btn btn-danger btn-sm" onclick="openExpenseForm()">${ICONS.plus} Add expense</button>
+      </div>
+    </div>
+    ${recent.length===0 ? emptyState('No entries yet','Add your first income or expense to see activity here.') : `
+    <table>
+      <thead><tr><th>Date (BS)</th><th>Type</th><th>Category</th><th>Description</th><th class="text-right">Amount</th></tr></thead>
+      <tbody>
+        ${recent.map(r=>`
+          <tr>
+            <td>${bsLabelFromString(r.date)}</td>
+            <td>${r.kind==='income'?'<span class="badge badge-sage">Income</span>':'<span class="badge badge-brick">Expense</span>'}</td>
+            <td>${escapeHtml(r.category)}</td>
+            <td class="muted">${escapeHtml(r.description||'—')}</td>
+            <td class="text-right num ${r.kind==='income'?'amt-income':'amt-expense'}">${r.kind==='income'?'+':'-'}${fmtRs(r.amount)}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>`}
+  </div>
+  `;
+};
+
+function emptyState(title, msg){
+  return `<div class="empty-state"><div class="title">${escapeHtml(title)}</div><p>${escapeHtml(msg)}</p></div>`;
+}
+function emptyStateNoBranch(){
+  const u = currentUser();
+  if(u.role==='admin'){
+    return `<div class="card card-pad">${emptyState('No branches yet','Create your first branch to start recording accounts.')}
+      <div class="text-center" style="text-align:center;"><button class="btn btn-primary" onclick="App.navigate('branches')">Go to Branches</button></div></div>`;
+  }
+  return `<div class="card card-pad">${emptyState('No branch assigned','Ask your admin or manager to assign you to a branch.')}</div>`;
+}
+
+
+/* ---------------- INCOME VIEW ---------------- */
+Views.income = function(){
+  const b = activeBranch();
+  if(!b) return emptyStateNoBranch();
+  const list = branchIncomes(b.id).sort((a,c)=>c.date.localeCompare(a.date));
+  const cats = getIncomeCategories(b.id);
+  return `
+  <div class="toolbar">
+    <div class="toolbar-left">
+      <div class="search-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" id="incomeSearch" placeholder="Search description…" oninput="renderIncomeTable()">
+      </div>
+      <select class="filter-select" id="incomeCategoryFilter" onchange="renderIncomeTable()">
+        <option value="">All categories</option>
+        ${cats.map(c=>`<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('')}
+      </select>
+      <input type="month" class="filter-input" id="incomeMonthFilter" onchange="renderIncomeTable()" title="Filter by AD month (approx)">
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-secondary btn-sm" onclick="printLedger('income')">${ICONS.print} Print</button>
+      <button class="btn btn-sage btn-sm" onclick="openIncomeForm()">${ICONS.plus} Add income</button>
+    </div>
+  </div>
+  <div class="card card-pad">
+    <div id="incomeTableWrap"></div>
+  </div>
+  `;
+};
+
+function currentIncomeFiltered(){
+  const b = activeBranch();
+  let list = branchIncomes(b.id);
+  const q = (document.getElementById('incomeSearch')?.value||'').toLowerCase();
+  const cat = document.getElementById('incomeCategoryFilter')?.value||'';
+  const month = document.getElementById('incomeMonthFilter')?.value||'';
+  if(q) list = list.filter(i=> (i.description||'').toLowerCase().includes(q));
+  if(cat) list = list.filter(i=> i.category===cat);
+  if(month){
+    list = list.filter(i=>{
+      const ad = bsToAd(bsStringToObj(i.date).y, bsStringToObj(i.date).m, bsStringToObj(i.date).d);
+      const adMonth = `${ad.getFullYear()}-${String(ad.getMonth()+1).padStart(2,'0')}`;
+      return adMonth===month;
+    });
+  }
+  return list.sort((a,c)=>c.date.localeCompare(a.date));
+}
+
+function renderIncomeTable(){
+  const wrap = document.getElementById('incomeTableWrap');
+  if(!wrap) return;
+  const list = currentIncomeFiltered();
+  const total = sumAmt(list);
+  wrap.innerHTML = list.length===0 ? emptyState('No income recorded','Try adjusting your filters or add a new income entry.') : `
+    <table>
+      <thead><tr><th>Voucher No.</th><th>Date (BS)</th><th>Category</th><th>Description</th><th>Received via</th><th class="text-right">Amount</th><th></th></tr></thead>
+      <tbody>
+        ${list.map(i=>`
+          <tr>
+            <td class="num muted">${escapeHtml(i.voucherNo||'—')}</td>
+            <td>${bsLabelFromString(i.date)}</td>
+            <td><span class="badge badge-sage">${escapeHtml(i.category)}</span></td>
+            <td>${escapeHtml(i.description||'—')}</td>
+            <td class="muted">${escapeHtml(i.method||'—')}</td>
+            <td class="text-right num amt-income">${fmtRs(i.amount)}</td>
+            <td>
+              <button class="btn btn-ghost btn-sm" title="Print voucher" onclick="printVoucher('income','${i.id}')">${ICONS.print}</button>
+              <button class="btn btn-ghost btn-sm" onclick="openIncomeForm('${i.id}')">${ICONS.edit}</button>
+              <button class="btn btn-ghost btn-sm" onclick="deleteEntry('income','${i.id}')">${ICONS.trash}</button>
+            </td>
+          </tr>`).join('')}
+      </tbody>
+      <tfoot>
+        <tr><td colspan="5" style="font-weight:700;">Total</td><td class="text-right num amt-income" style="font-weight:700;">${fmtRs(total)}</td><td></td></tr>
+      </tfoot>
+    </table>`;
+}
+
+function openIncomeForm(id){
+  const b = activeBranch();
+  const editing = id ? DB.incomes.find(x=>x.id===id) : null;
+  const cats = getIncomeCategories(b.id);
+  App.openModal(`
+    <div class="modal-head"><h3>${editing?'Edit income':'Add income'}</h3><button class="modal-close" onclick="App.closeModal()">&times;</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="field full" style="background:var(--line-soft);padding:8px 12px;border-radius:var(--radius);margin-bottom:4px;">
+          <label style="margin-bottom:2px;">Voucher No.</label>
+          <div class="num" style="font-weight:600;color:var(--ink-soft);">${editing ? escapeHtml(editing.voucherNo||'—') : 'Auto-assigned on save (INV-'+todayBs().y+'-XXX)'}</div>
+        </div>
+        <div class="field full">
+          <label>Date (BS)</label>
+          ${bsDatePicker('incForm_date', editing?editing.date:todayBsString())}
+        </div>
+        <div class="field">
+          <label>Category</label>
+          <select id="incForm_category">
+            ${cats.map(c=>`<option value="${escapeHtml(c)}" ${editing&&editing.category===c?'selected':''}>${escapeHtml(c)}</option>`).join('')}
+          </select>
+        </div>
+        <div class="field">
+          <label>Amount (Rs.)</label>
+          <input type="number" id="incForm_amount" step="0.01" min="0" value="${editing?editing.amount:''}" placeholder="0.00">
+        </div>
+        <div class="field full">
+          <label>Description</label>
+          <input type="text" id="incForm_desc" value="${editing?escapeHtml(editing.description||''):''}" placeholder="e.g. Tuition fee - June">
+        </div>
+        <div class="field">
+          <label>Received via</label>
+          <select id="incForm_method">
+            ${["Cash","Bank","Mobile Wallet","Cheque","Other"].map(m=>`<option ${editing&&editing.method===m?'selected':''}>${m}</option>`).join('')}
+          </select>
+        </div>
+        <div class="field">
+          <label>Reference / Receipt No.</label>
+          <input type="text" id="incForm_ref" value="${editing?escapeHtml(editing.ref||''):''}" placeholder="Optional">
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      ${editing?`<button class="btn btn-secondary" onclick="printVoucher('income','${editing.id}')">${ICONS.print} Print voucher</button>`:''}
+      <button class="btn btn-secondary" onclick="App.closeModal()">Cancel</button>
+      <button class="btn btn-sage" onclick="saveIncome('${editing?editing.id:''}')">Save income</button>
+    </div>
+  `);
+  wireBsDatePicker('incForm_date');
+}
+
+function saveIncome(id){
+  const b = activeBranch();
+  const date = readBsDate('incForm_date');
+  const category = document.getElementById('incForm_category').value;
+  const amount = parseFloat(document.getElementById('incForm_amount').value);
+  const description = document.getElementById('incForm_desc').value.trim();
+  const method = document.getElementById('incForm_method').value;
+  const ref = document.getElementById('incForm_ref').value.trim();
+  if(!date || !category || isNaN(amount) || amount<=0){
+    toast('Enter a valid date, category and amount.', 'error'); return;
+  }
+  if(id){
+    const rec = DB.incomes.find(x=>x.id===id);
+    Object.assign(rec, {date,category,amount,description,method,ref});
+  } else {
+    const voucherNo = nextVoucherNo(b.id, 'income');
+    DB.incomes.push({ id: uid('inc'), branchId:b.id, voucherNo, date, category, amount, description, method, ref, createdBy: currentUser().id, createdAt: new Date().toISOString() });
+  }
+  saveDb();
+  App.closeModal();
+  toast('Income saved.', 'success');
+  App.render();
+}
+
+/* ---------------- EXPENSE VIEW ---------------- */
+Views.expenses = function(){
+  const b = activeBranch();
+  if(!b) return emptyStateNoBranch();
+  const cats = getExpenseCategories(b.id);
+  return `
+  <div class="toolbar">
+    <div class="toolbar-left">
+      <div class="search-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" id="expenseSearch" placeholder="Search description…" oninput="renderExpenseTable()">
+      </div>
+      <select class="filter-select" id="expenseCategoryFilter" onchange="renderExpenseTable()">
+        <option value="">All categories</option>
+        ${cats.map(c=>`<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('')}
+      </select>
+      <input type="month" class="filter-input" id="expenseMonthFilter" onchange="renderExpenseTable()" title="Filter by AD month (approx)">
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-secondary btn-sm" onclick="printLedger('expense')">${ICONS.print} Print</button>
+      <button class="btn btn-danger btn-sm" onclick="openExpenseForm()">${ICONS.plus} Add expense</button>
+    </div>
+  </div>
+  <div class="card card-pad">
+    <div id="expenseTableWrap"></div>
+  </div>
+  `;
+};
+
+function currentExpenseFiltered(){
+  const b = activeBranch();
+  let list = branchExpenses(b.id);
+  const q = (document.getElementById('expenseSearch')?.value||'').toLowerCase();
+  const cat = document.getElementById('expenseCategoryFilter')?.value||'';
+  const month = document.getElementById('expenseMonthFilter')?.value||'';
+  if(q) list = list.filter(i=> (i.description||'').toLowerCase().includes(q));
+  if(cat) list = list.filter(i=> i.category===cat);
+  if(month){
+    list = list.filter(i=>{
+      const o = bsStringToObj(i.date);
+      const ad = bsToAd(o.y,o.m,o.d);
+      const adMonth = `${ad.getFullYear()}-${String(ad.getMonth()+1).padStart(2,'0')}`;
+      return adMonth===month;
+    });
+  }
+  return list.sort((a,c)=>c.date.localeCompare(a.date));
+}
+
+function renderExpenseTable(){
+  const wrap = document.getElementById('expenseTableWrap');
+  if(!wrap) return;
+  const list = currentExpenseFiltered();
+  const total = sumAmt(list);
+  wrap.innerHTML = list.length===0 ? emptyState('No expenses recorded','Try adjusting your filters or add a new expense entry.') : `
+    <table>
+      <thead><tr><th>Voucher No.</th><th>Date (BS)</th><th>Category</th><th>Description</th><th>Paid via</th><th class="text-right">Amount</th><th></th></tr></thead>
+      <tbody>
+        ${list.map(i=>`
+          <tr>
+            <td class="num muted">${escapeHtml(i.voucherNo||'—')}</td>
+            <td>${bsLabelFromString(i.date)}</td>
+            <td><span class="badge badge-brick">${escapeHtml(i.category)}</span></td>
+            <td>${escapeHtml(i.description||'—')}</td>
+            <td class="muted">${escapeHtml(i.method||'—')}</td>
+            <td class="text-right num amt-expense">${fmtRs(i.amount)}</td>
+            <td>
+              <button class="btn btn-ghost btn-sm" title="Print voucher" onclick="printVoucher('expense','${i.id}')">${ICONS.print}</button>
+              <button class="btn btn-ghost btn-sm" onclick="openExpenseForm('${i.id}')">${ICONS.edit}</button>
+              <button class="btn btn-ghost btn-sm" onclick="deleteEntry('expense','${i.id}')">${ICONS.trash}</button>
+            </td>
+          </tr>`).join('')}
+      </tbody>
+      <tfoot>
+        <tr><td colspan="5" style="font-weight:700;">Total</td><td class="text-right num amt-expense" style="font-weight:700;">${fmtRs(total)}</td><td></td></tr>
+      </tfoot>
+    </table>`;
+}
+
+function openExpenseForm(id){
+  const b = activeBranch();
+  const editing = id ? DB.expenses.find(x=>x.id===id) : null;
+  const cats = getExpenseCategories(b.id);
+  App.openModal(`
+    <div class="modal-head"><h3>${editing?'Edit expense':'Add expense'}</h3><button class="modal-close" onclick="App.closeModal()">&times;</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="field full" style="background:var(--line-soft);padding:8px 12px;border-radius:var(--radius);margin-bottom:4px;">
+          <label style="margin-bottom:2px;">Voucher No.</label>
+          <div class="num" style="font-weight:600;color:var(--ink-soft);">${editing ? escapeHtml(editing.voucherNo||'—') : 'Auto-assigned on save (EXP-'+todayBs().y+'-XXX)'}</div>
+        </div>
+        <div class="field full">
+          <label>Date (BS)</label>
+          ${bsDatePicker('expForm_date', editing?editing.date:todayBsString())}
+        </div>
+        <div class="field">
+          <label>Category</label>
+          <select id="expForm_category">
+            ${cats.map(c=>`<option value="${escapeHtml(c)}" ${editing&&editing.category===c?'selected':''}>${escapeHtml(c)}</option>`).join('')}
+          </select>
+        </div>
+        <div class="field">
+          <label>Amount (Rs.)</label>
+          <input type="number" id="expForm_amount" step="0.01" min="0" value="${editing?editing.amount:''}" placeholder="0.00">
+        </div>
+        <div class="field full">
+          <label>Description</label>
+          <input type="text" id="expForm_desc" value="${editing?escapeHtml(editing.description||''):''}" placeholder="e.g. Electricity bill - June">
+        </div>
+        <div class="field">
+          <label>Paid via</label>
+          <select id="expForm_method">
+            ${["Cash","Bank","Mobile Wallet","Cheque","Other"].map(m=>`<option ${editing&&editing.method===m?'selected':''}>${m}</option>`).join('')}
+          </select>
+        </div>
+        <div class="field">
+          <label>Reference / Voucher No.</label>
+          <input type="text" id="expForm_ref" value="${editing?escapeHtml(editing.ref||''):''}" placeholder="Optional">
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      ${editing?`<button class="btn btn-secondary" onclick="printVoucher('expense','${editing.id}')">${ICONS.print} Print voucher</button>`:''}
+      <button class="btn btn-secondary" onclick="App.closeModal()">Cancel</button>
+      <button class="btn btn-danger" onclick="saveExpense('${editing?editing.id:''}')">Save expense</button>
+    </div>
+  `);
+  wireBsDatePicker('expForm_date');
+}
+
+function saveExpense(id){
+  const b = activeBranch();
+  const date = readBsDate('expForm_date');
+  const category = document.getElementById('expForm_category').value;
+  const amount = parseFloat(document.getElementById('expForm_amount').value);
+  const description = document.getElementById('expForm_desc').value.trim();
+  const method = document.getElementById('expForm_method').value;
+  const ref = document.getElementById('expForm_ref').value.trim();
+  if(!date || !category || isNaN(amount) || amount<=0){
+    toast('Enter a valid date, category and amount.', 'error'); return;
+  }
+  if(id){
+    const rec = DB.expenses.find(x=>x.id===id);
+    Object.assign(rec, {date,category,amount,description,method,ref});
+  } else {
+    const voucherNo = nextVoucherNo(b.id, 'expense');
+    DB.expenses.push({ id: uid('exp'), branchId:b.id, voucherNo, date, category, amount, description, method, ref, createdBy: currentUser().id, createdAt: new Date().toISOString() });
+  }
+  saveDb();
+  App.closeModal();
+  toast('Expense saved.', 'success');
+  App.render();
+}
+
+function deleteEntry(kind, id){
+  if(!confirm('Delete this entry? This cannot be undone.')) return;
+  if(kind==='income') DB.incomes = DB.incomes.filter(x=>x.id!==id);
+  else DB.expenses = DB.expenses.filter(x=>x.id!==id);
+  saveDb();
+  toast('Entry deleted.', 'success');
+  App.render();
+}
+
+/* ---------------- BS DATE PICKER (simple selects) ---------------- */
+function bsDatePicker(idPrefix, value){
+  const obj = value ? bsStringToObj(value) : todayBs();
+  const years = [];
+  for(let y=2070;y<=2090;y++) years.push(y);
+  const maxDays = bsDaysInMonth(obj.y, obj.m);
+  return `
+  <div style="display:grid;grid-template-columns:1fr 1.4fr 1fr;gap:8px;">
+    <select id="${idPrefix}_d">${Array.from({length:maxDays},(_,i)=>i+1).map(d=>`<option value="${d}" ${d===obj.d?'selected':''}>${d}</option>`).join('')}</select>
+    <select id="${idPrefix}_m">${BS_MONTHS.map((m,i)=>`<option value="${i+1}" ${i+1===obj.m?'selected':''}>${m}</option>`).join('')}</select>
+    <select id="${idPrefix}_y">${years.map(y=>`<option value="${y}" ${y===obj.y?'selected':''}>${y}</option>`).join('')}</select>
+  </div>`;
+}
+// Reads the current value directly from a date picker's day/month/year <select> elements.
+// (Scripts inserted via innerHTML never execute, so the date must be read live at save-time
+// rather than relying on a hidden input kept "in sync" by an injected <script> tag.)
+function readBsDate(idPrefix){
+  const dEl = document.getElementById(idPrefix+'_d');
+  const mEl = document.getElementById(idPrefix+'_m');
+  const yEl = document.getElementById(idPrefix+'_y');
+  if(!dEl || !mEl || !yEl) return '';
+  const d = dEl.value, m = mEl.value, y = yEl.value;
+  return y+'-'+String(m).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+}
+// Attaches a real change listener (can't rely on inline <script> in innerHTML, which never runs)
+// so the day dropdown re-caps its options whenever month/year changes, preventing invalid
+// dates like "31 Poush" in a 29-day month.
+function wireBsDatePicker(idPrefix){
+  const dEl = document.getElementById(idPrefix+'_d');
+  const mEl = document.getElementById(idPrefix+'_m');
+  const yEl = document.getElementById(idPrefix+'_y');
+  if(!dEl || !mEl || !yEl) return;
+  function refreshDayOptions(){
+    const y = parseInt(yEl.value,10), m = parseInt(mEl.value,10);
+    const maxDays = bsDaysInMonth(y,m) || 30;
+    const currentSelected = parseInt(dEl.value,10) || 1;
+    const keepDay = Math.min(currentSelected, maxDays);
+    dEl.innerHTML = Array.from({length:maxDays},(_,i)=>i+1).map(d=>`<option value="${d}" ${d===keepDay?'selected':''}>${d}</option>`).join('');
+  }
+  mEl.addEventListener('change', refreshDayOptions);
+  yEl.addEventListener('change', refreshDayOptions);
+}
+
+/* ---------------- PARTY LEDGER VIEW ---------------- */
+let partyDetailId = null; // currently open party (for drill-in view)
+
+Views.parties = function(){
+  const b = activeBranch();
+  if(!b) return emptyStateNoBranch();
+  if(partyDetailId){
+    const p = DB.parties.find(x=>x.id===partyDetailId && x.branchId===b.id);
+    if(p) return partyDetailView(p);
+    partyDetailId = null;
+  }
+  const parties = branchParties(b.id);
+  const rows = parties.map(p=>{
+    const bal = partyBalance(p.id);
+    return `<tr>
+      <td style="font-weight:600;cursor:pointer;" onclick="openPartyDetail('${p.id}')">${escapeHtml(p.name)}</td>
+      <td class="muted">${escapeHtml(p.phone||'—')}</td>
+      <td class="muted">${escapeHtml(p.type||'—')}</td>
+      <td class="text-right num" style="font-weight:600;color:${bal>=0?'var(--sage)':'var(--brick)'};">${fmtRs(Math.abs(bal))} <span class="muted" style="font-weight:400;font-size:11px;">${bal>=0?'Due from':'Due to'}</span></td>
+      <td>
+        <button class="btn btn-ghost btn-sm" onclick="openPartyDetail('${p.id}')">View ledger</button>
+        <button class="btn btn-ghost btn-sm" onclick="openPartyForm('${p.id}')">${ICONS.edit}</button>
+        <button class="btn btn-ghost btn-sm" onclick="deleteParty('${p.id}')">${ICONS.trash}</button>
+      </td>
+    </tr>`;
+  }).join('');
+  return `
+  <div class="toolbar">
+    <div class="toolbar-left">
+      <div class="search-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" id="partySearch" placeholder="Search party…" oninput="renderPartyTable()">
+      </div>
+    </div>
+    <button class="btn btn-primary btn-sm" onclick="openPartyForm()">${ICONS.plus} Add party</button>
+  </div>
+  <div class="card card-pad">
+    <div id="partyTableWrap">
+      ${parties.length===0 ? emptyState('No parties yet','Add a supplier, customer, or other party to start tracking their balance.') : `
+      <table>
+        <thead><tr><th>Party</th><th>Phone</th><th>Type</th><th class="text-right">Balance</th><th></th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>`}
+    </div>
+  </div>
+  `;
+};
+
+function renderPartyTable(){
+  const wrap = document.getElementById('partyTableWrap');
+  if(!wrap) return;
+  const b = activeBranch();
+  const q = (document.getElementById('partySearch')?.value||'').toLowerCase();
+  const parties = branchParties(b.id).filter(p=>!q || p.name.toLowerCase().includes(q));
+  if(parties.length===0){ wrap.innerHTML = emptyState('No matching parties','Try a different search term.'); return; }
+  wrap.innerHTML = `<table>
+    <thead><tr><th>Party</th><th>Phone</th><th>Type</th><th class="text-right">Balance</th><th></th></tr></thead>
+    <tbody>${parties.map(p=>{
+      const bal = partyBalance(p.id);
+      return `<tr>
+        <td style="font-weight:600;cursor:pointer;" onclick="openPartyDetail('${p.id}')">${escapeHtml(p.name)}</td>
+        <td class="muted">${escapeHtml(p.phone||'—')}</td>
+        <td class="muted">${escapeHtml(p.type||'—')}</td>
+        <td class="text-right num" style="font-weight:600;color:${bal>=0?'var(--sage)':'var(--brick)'};">${fmtRs(Math.abs(bal))} <span class="muted" style="font-weight:400;font-size:11px;">${bal>=0?'Due from':'Due to'}</span></td>
+        <td>
+          <button class="btn btn-ghost btn-sm" onclick="openPartyDetail('${p.id}')">View ledger</button>
+          <button class="btn btn-ghost btn-sm" onclick="openPartyForm('${p.id}')">${ICONS.edit}</button>
+          <button class="btn btn-ghost btn-sm" onclick="deleteParty('${p.id}')">${ICONS.trash}</button>
+        </td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table>`;
+}
+
+function openPartyDetail(id){ partyDetailId = id; App.navigate('parties'); }
+function closePartyDetail(){ partyDetailId = null; App.navigate('parties'); }
+
+function partyDetailView(p){
+  const txns = partyTransactionsFor(p.id);
+  const bal = partyBalance(p.id);
+  let running = 0;
+  const rows = txns.map(t=>{
+    running += (t.type==='receipt' ? t.amount : -t.amount);
+    return `<tr>
+      <td class="num muted">${escapeHtml(t.voucherNo||'—')}</td>
+      <td>${bsLabelFromString(t.date)}</td>
+      <td>${t.type==='receipt'?'<span class="badge badge-sage">Receipt</span>':'<span class="badge badge-brick">Payment</span>'}</td>
+      <td>${escapeHtml(t.description||'—')}</td>
+      <td class="muted">${escapeHtml(t.method||'—')}</td>
+      <td class="text-right num ${t.type==='receipt'?'amt-income':'amt-expense'}">${t.type==='receipt'?'+':'-'}${fmtRs(t.amount)}</td>
+      <td class="text-right num" style="color:${running>=0?'var(--sage)':'var(--brick)'};">${fmtRs(running)}</td>
+      <td>
+        <button class="btn btn-ghost btn-sm" title="Print voucher" onclick="printPartyVoucher('${t.id}')">${ICONS.print}</button>
+        <button class="btn btn-ghost btn-sm" onclick="deletePartyTxn('${t.id}')">${ICONS.trash}</button>
+      </td>
+    </tr>`;
+  }).join('');
+  return `
+  <div class="toolbar">
+    <button class="btn btn-secondary btn-sm" onclick="closePartyDetail()">&larr; All parties</button>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-sage btn-sm" onclick="openPartyTxnForm('${p.id}','receipt')">${ICONS.plus} Record receipt</button>
+      <button class="btn btn-danger btn-sm" onclick="openPartyTxnForm('${p.id}','payment')">${ICONS.plus} Record payment</button>
+    </div>
+  </div>
+  <div class="stat-row">
+    <div class="stat-card">
+      <div class="stat-label">Party</div>
+      <div class="stat-value" style="font-size:18px;font-family:var(--font-display);">${escapeHtml(p.name)}</div>
+      <div class="stat-foot">${escapeHtml(p.phone||'No phone')} · ${escapeHtml(p.type||'General')}</div>
+    </div>
+    <div class="stat-card" style="border-left-color:${bal>=0?'var(--sage)':'var(--brick)'};">
+      <div class="stat-label">Current balance</div>
+      <div class="stat-value num" style="color:${bal>=0?'var(--sage)':'var(--brick)'};">${fmtRs(Math.abs(bal))}</div>
+      <div class="stat-foot">${bal>=0?'Due from party':'Due to party'}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Total transactions</div>
+      <div class="stat-value num">${txns.length}</div>
+      <div class="stat-foot">Across this branch</div>
+    </div>
+  </div>
+  <div class="card card-pad">
+    <div class="section-title">
+      Ledger — ${escapeHtml(p.name)}
+      <button class="btn btn-secondary btn-sm" onclick="printPartyLedger('${p.id}')">${ICONS.print} Print ledger</button>
+    </div>
+    ${txns.length===0 ? emptyState('No transactions yet','Record a payment or receipt for this party to begin tracking their balance.') : `
+    <table>
+      <thead><tr><th>Voucher No.</th><th>Date (BS)</th><th>Type</th><th>Narration</th><th>Via</th><th class="text-right">Amount</th><th class="text-right">Balance</th><th></th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`}
+  </div>
+  `;
+}
+
+function openPartyForm(id){
+  const b = activeBranch();
+  const editing = id ? DB.parties.find(x=>x.id===id) : null;
+  App.openModal(`
+    <div class="modal-head"><h3>${editing?'Edit party':'Add party'}</h3><button class="modal-close" onclick="App.closeModal()">&times;</button></div>
+    <div class="modal-body">
+      <div class="field">
+        <label>Party name</label>
+        <input type="text" id="ptyForm_name" value="${editing?escapeHtml(editing.name):''}" placeholder="e.g. Himalaya Suppliers">
+      </div>
+      <div class="form-grid">
+        <div class="field">
+          <label>Phone</label>
+          <input type="text" id="ptyForm_phone" value="${editing?escapeHtml(editing.phone||''):''}" placeholder="Optional">
+        </div>
+        <div class="field">
+          <label>Type</label>
+          <select id="ptyForm_type">
+            ${["Supplier","Customer","Vendor","Contractor","Other"].map(t=>`<option ${editing&&editing.type===t?'selected':''}>${t}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Address / Notes</label>
+        <input type="text" id="ptyForm_notes" value="${editing?escapeHtml(editing.notes||''):''}" placeholder="Optional">
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="App.closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveParty('${editing?editing.id:''}')">Save party</button>
+    </div>
+  `);
+}
+function saveParty(id){
+  const b = activeBranch();
+  const name = document.getElementById('ptyForm_name').value.trim();
+  const phone = document.getElementById('ptyForm_phone').value.trim();
+  const type = document.getElementById('ptyForm_type').value;
+  const notes = document.getElementById('ptyForm_notes').value.trim();
+  if(!name){ toast('Party name is required.', 'error'); return; }
+  if(id){
+    const p = DB.parties.find(x=>x.id===id);
+    Object.assign(p, {name,phone,type,notes});
+  } else {
+    DB.parties.push({ id: uid('pty'), branchId:b.id, name, phone, type, notes, createdAt: todayBsString() });
+  }
+  saveDb();
+  App.closeModal();
+  toast('Party saved.', 'success');
+  App.render();
+}
+function deleteParty(id){
+  const hasTxns = DB.partyTransactions.some(t=>t.partyId===id);
+  if(!confirm(hasTxns ? 'This party has transaction history. Deleting it will permanently remove all of that history too. Continue?' : 'Delete this party?')) return;
+  DB.parties = DB.parties.filter(p=>p.id!==id);
+  DB.partyTransactions = DB.partyTransactions.filter(t=>t.partyId!==id);
+  saveDb();
+  toast('Party deleted.', 'success');
+  App.render();
+}
+
+function openPartyTxnForm(partyId, type){
+  const p = DB.parties.find(x=>x.id===partyId);
+  const isReceipt = type==='receipt';
+  App.openModal(`
+    <div class="modal-head"><h3>${isReceipt?'Record receipt from':'Record payment to'} ${escapeHtml(p.name)}</h3><button class="modal-close" onclick="App.closeModal()">&times;</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="field full">
+          <label>Date (BS)</label>
+          ${bsDatePicker('ptyTxn_date', todayBsString())}
+        </div>
+        <div class="field">
+          <label>Amount (Rs.)</label>
+          <input type="number" id="ptyTxn_amount" step="0.01" min="0" placeholder="0.00">
+        </div>
+        <div class="field">
+          <label>${isReceipt?'Received via':'Paid via'}</label>
+          <select id="ptyTxn_method">
+            ${["Cash","Bank","Mobile Wallet","Cheque","Other"].map(m=>`<option>${m}</option>`).join('')}
+          </select>
+        </div>
+        <div class="field full">
+          <label>Narration</label>
+          <input type="text" id="ptyTxn_desc" placeholder="e.g. Advance against invoice #45">
+        </div>
+        <div class="field full">
+          <label>Reference No.</label>
+          <input type="text" id="ptyTxn_ref" placeholder="Optional">
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="App.closeModal()">Cancel</button>
+      <button class="btn ${isReceipt?'btn-sage':'btn-danger'}" onclick="savePartyTxn('${partyId}','${type}')">Save</button>
+    </div>
+  `);
+  wireBsDatePicker('ptyTxn_date');
+}
+function savePartyTxn(partyId, type){
+  const b = activeBranch();
+  const date = readBsDate('ptyTxn_date');
+  const amount = parseFloat(document.getElementById('ptyTxn_amount').value);
+  const method = document.getElementById('ptyTxn_method').value;
+  const description = document.getElementById('ptyTxn_desc').value.trim();
+  const ref = document.getElementById('ptyTxn_ref').value.trim();
+  if(!date || isNaN(amount) || amount<=0){ toast('Enter a valid date and amount.', 'error'); return; }
+  const voucherKind = type==='receipt' ? 'party_receipt' : 'party_payment';
+  const voucherNo = nextVoucherNo(b.id, voucherKind);
+  DB.partyTransactions.push({ id: uid('ptx'), branchId:b.id, partyId, type, voucherNo, date, amount, method, description, ref, createdBy: currentUser().id, createdAt: new Date().toISOString() });
+  saveDb();
+  App.closeModal();
+  toast('Transaction saved.', 'success');
+  App.render();
+}
+function deletePartyTxn(id){
+  if(!confirm('Delete this transaction? This cannot be undone.')) return;
+  DB.partyTransactions = DB.partyTransactions.filter(t=>t.id!==id);
+  saveDb();
+  toast('Transaction deleted.', 'success');
+  App.render();
+}
+
+
+Views.pnl = function(){
+  const b = activeBranch();
+  if(!b) return emptyStateNoBranch();
+  const presetRange = pnlCurrentRange || currentBsMonthRange();
+  return renderPnlBody(b, presetRange);
+};
+
+let pnlCurrentRange = null;
+
+function renderPnlBody(b, range){
+  const incomes = branchIncomes(b.id).filter(i=>inRange(i.date, range.from, range.to));
+  const expenses = branchExpenses(b.id).filter(e=>inRange(e.date, range.from, range.to));
+  const incByCat = groupSum(incomes);
+  const expByCat = groupSum(expenses);
+  const incTotal = sumAmt(incomes);
+  const expTotal = sumAmt(expenses);
+  const net = incTotal - expTotal;
+  const isProfit = net>=0;
+
+  return `
+  <div class="card card-pad" style="margin-bottom:20px;">
+    <div class="section-title" style="margin-bottom:10px;">Select period</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
+      <div class="field" style="margin-bottom:0;">
+        <label>From (BS)</label>
+        ${bsDatePicker('pnlFrom', range.from)}
+      </div>
+      <div class="field" style="margin-bottom:0;">
+        <label>To (BS)</label>
+        ${bsDatePicker('pnlTo', range.to)}
+      </div>
+      <button class="btn btn-secondary btn-sm" onclick="setPnlRange(currentBsMonthRange())">This month</button>
+      <button class="btn btn-secondary btn-sm" onclick="setPnlYearRange()">This BS year</button>
+      <button class="btn btn-primary btn-sm" onclick="applyPnlRange()">Apply</button>
+      <button class="btn btn-secondary btn-sm" onclick="printPnl()">${ICONS.print} Print P&amp;L</button>
+    </div>
+  </div>
+
+  <div class="grid-pnl">
+    <div class="card card-pad">
+      <div class="section-title">Income vs Expenses — ${bsLabelFromString(range.from)} to ${bsLabelFromString(range.to)}</div>
+      <table style="margin-bottom:18px;">
+        <thead><tr><th>Income category</th><th class="text-right">Amount</th></tr></thead>
+        <tbody>
+          ${Object.keys(incByCat).length===0 ? `<tr><td colspan="2" class="muted text-center">No income in this period</td></tr>` :
+            Object.entries(incByCat).sort((a,c)=>c[1]-a[1]).map(([cat,amt])=>`
+            <tr><td>${escapeHtml(cat)}</td><td class="text-right num amt-income">${fmtRs(amt)}</td></tr>`).join('')}
+        </tbody>
+        <tfoot><tr><td style="font-weight:700;">Total income</td><td class="text-right num amt-income" style="font-weight:700;">${fmtRs(incTotal)}</td></tr></tfoot>
+      </table>
+      <table>
+        <thead><tr><th>Expense category</th><th class="text-right">Amount</th></tr></thead>
+        <tbody>
+          ${Object.keys(expByCat).length===0 ? `<tr><td colspan="2" class="muted text-center">No expenses in this period</td></tr>` :
+            Object.entries(expByCat).sort((a,c)=>c[1]-a[1]).map(([cat,amt])=>`
+            <tr><td>${escapeHtml(cat)}</td><td class="text-right num amt-expense">${fmtRs(amt)}</td></tr>`).join('')}
+        </tbody>
+        <tfoot><tr><td style="font-weight:700;">Total expenses</td><td class="text-right num amt-expense" style="font-weight:700;">${fmtRs(expTotal)}</td></tr></tfoot>
+      </table>
+    </div>
+
+    <div class="card card-pad" style="text-align:center;">
+      <div class="section-title" style="justify-content:center;">Result</div>
+      <div style="display:flex;justify-content:center;margin:18px 0;">
+        <div class="stamp ${isProfit?'profit':'loss'}">
+          <div class="stamp-word">${isProfit?'Profit':'Loss'}</div>
+          <div class="stamp-amt num">${fmtRs(Math.abs(net))}</div>
+        </div>
+      </div>
+      <table style="text-align:left;">
+        <tbody>
+          <tr><td>Total income</td><td class="text-right num amt-income">${fmtRs(incTotal)}</td></tr>
+          <tr><td>Total expenses</td><td class="text-right num amt-expense">${fmtRs(expTotal)}</td></tr>
+          <tr><td style="font-weight:700;">Net ${isProfit?'profit':'loss'}</td><td class="text-right num" style="font-weight:700;color:${isProfit?'var(--sage)':'var(--brick)'};">${fmtRs(net)}</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  `;
+}
+
+function groupSum(list){
+  const out = {};
+  list.forEach(x=>{ out[x.category] = (out[x.category]||0) + Number(x.amount||0); });
+  return out;
+}
+function setPnlRange(range){ pnlCurrentRange = range; App.render(); }
+function setPnlYearRange(){ const t=todayBs(); setPnlRange({from:bsString({y:t.y,m:1,d:1}), to:bsString({y:t.y,m:12,d:bsDaysInMonth(t.y,12)})}); }
+function applyPnlRange(){
+  const from = readBsDate('pnlFrom');
+  const to = readBsDate('pnlTo');
+  if(!from || !to){ toast('Select both From and To dates.', 'error'); return; }
+  if(from>to){ toast('"From" date must be before "To" date.', 'error'); return; }
+  pnlCurrentRange = {from,to};
+  App.render();
+}
+
+/* ---------------- REPORTS VIEW ---------------- */
+Views.reports = function(){
+  const b = activeBranch();
+  if(!b) return emptyStateNoBranch();
+  return `
+  <div class="card card-pad" style="margin-bottom:18px;">
+    <div class="section-title">Printable statements</div>
+    <p class="muted" style="margin-bottom:16px;">Generate a clean, print-ready statement for ${escapeHtml(b.name)}. Opens in a new window ready for Ctrl/Cmd+P.</p>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;">
+      <button class="btn btn-secondary" onclick="printLedger('income')">${ICONS.print} Income register</button>
+      <button class="btn btn-secondary" onclick="printLedger('expense')">${ICONS.print} Expense register</button>
+      <button class="btn btn-secondary" onclick="printLedger('both')">${ICONS.print} Combined daybook</button>
+      <button class="btn btn-secondary" onclick="App.navigate('pnl')">${ICONS.pnl} Profit &amp; Loss report</button>
+    </div>
+  </div>
+  <div class="card card-pad">
+    <div class="section-title">Data tools</div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;">
+      <button class="btn btn-secondary" onclick="exportJson()">Export branch data backup (.json)</button>
+      ${isAdmin()?`<button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">Restore from backup (.json)</button>
+      <input type="file" id="importFile" accept=".json" style="display:none" onchange="importJson(this.files[0])">`:''}
+    </div>
+  </div>
+  `;
+};
+
+function exportJson(){
+  const b = activeBranch();
+  const blob = new Blob([JSON.stringify(DB,null,2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `khata-backup-${todayBsString()}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('Backup downloaded.', 'success');
+}
+function importJson(file){
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      const parsed = JSON.parse(e.target.result);
+      if(!parsed.branches || !parsed.users){ throw new Error('bad format'); }
+      if(!confirm('This will replace ALL current data with the backup. Continue?')) return;
+      DB = parsed;
+      saveDb();
+      toast('Data restored from backup.', 'success');
+      App.render();
+    }catch(err){
+      toast('Invalid backup file.', 'error');
+    }
+  };
+  reader.readAsText(file);
+}
+
+/* ---------------- CHAT VIEW ---------------- */
+let chatActiveUserId = null;
+let chatPollTimer = null;
+
+Views.chat = function(){
+  const me = currentUser();
+  if(chatActiveUserId === me.id) chatActiveUserId = null; // guard against stale/self state
+  const contacts = chatContacts();
+  if(!chatActiveUserId && contacts.length>0){
+    // default to the contact with the most recent message, else first contact
+    const withMsgs = contacts
+      .map(c=>({c, last: Math.max(0, ...chatThreadMessages(c.id).map(m=>new Date(m.createdAt).getTime()))}))
+      .sort((a,b2)=>b2.last-a.last);
+    chatActiveUserId = withMsgs[0].c.id;
+  }
+  // Group contacts by branch for clarity in a multi-branch org
+  const grouped = {};
+  contacts.forEach(c=>{
+    const key = c.role==='admin' ? 'Admins (all branches)' : branchNameOf(c.branchId);
+    if(!grouped[key]) grouped[key] = [];
+    grouped[key].push(c);
+  });
+
+  const contactListHtml = Object.keys(grouped).sort().map(groupName=>{
+    const items = grouped[groupName].map(c=>{
+      const unread = unreadCountFrom(c.id);
+      const lastMsgs = chatThreadMessages(c.id);
+      const last = lastMsgs[lastMsgs.length-1];
+      return `<div class="chat-contact ${c.id===chatActiveUserId?'active':''}" onclick="openChatWith('${c.id}')">
+        <div class="chat-contact-avatar">${(c.name||c.username).charAt(0).toUpperCase()}</div>
+        <div class="chat-contact-info">
+          <div class="chat-contact-name">${escapeHtml(c.name||c.username)} <span class="role-pill role-${c.role}" style="margin-left:4px;">${c.role}</span></div>
+          <div class="chat-contact-preview">${last?escapeHtml(last.text.slice(0,40)):'No messages yet'}</div>
+        </div>
+        ${unread>0?`<span class="nav-badge" style="position:static;">${unread}</span>`:''}
+      </div>`;
+    }).join('');
+    return `<div class="chat-group-label">${escapeHtml(groupName)}</div>${items}`;
+  }).join('');
+
+  return `
+  <div class="chat-shell">
+    <div class="chat-sidebar">
+      ${contacts.length===0 ? `<div class="chat-empty-contacts">No other users yet.</div>` : contactListHtml}
+    </div>
+    <div class="chat-main" id="chatMainPane">
+      ${chatActiveUserId ? renderChatThread(chatActiveUserId) : `<div class="chat-empty-state">${emptyState('No conversation selected','Pick a person from the list to start chatting.')}</div>`}
+    </div>
+  </div>
+  `;
+};
+
+function renderChatThread(otherUserId){
+  const other = DB.users.find(u=>u.id===otherUserId);
+  if(!other) return emptyState('User not found','This user may have been removed.');
+  markThreadRead(otherUserId);
+  const msgs = chatThreadMessages(otherUserId);
+  const me = currentUser();
+  return `
+  <div class="chat-thread-head">
+    <div class="chat-contact-avatar">${(other.name||other.username).charAt(0).toUpperCase()}</div>
+    <div>
+      <div class="chat-contact-name">${escapeHtml(other.name||other.username)}</div>
+      <div class="chat-contact-preview">${other.role} · ${escapeHtml(branchNameOf(other.branchId))}</div>
+    </div>
+  </div>
+  <div class="chat-messages" id="chatMessagesWrap">
+    ${msgs.length===0 ? `<div class="chat-empty-thread">No messages yet — say hello!</div>` :
+      msgs.map(m=>`
+      <div class="chat-bubble-row ${m.fromUserId===me.id?'mine':'theirs'}">
+        <div class="chat-bubble">
+          <div class="chat-bubble-text">${escapeHtml(m.text)}</div>
+          <div class="chat-bubble-time">${new Date(m.createdAt).toLocaleString([], {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'})}</div>
+        </div>
+      </div>`).join('')}
+  </div>
+  <div class="chat-input-row">
+    <input type="text" id="chatInput" placeholder="Type a message…" onkeydown="if(event.key==='Enter'){sendChatMessage()}">
+    <button class="btn btn-primary btn-sm" onclick="sendChatMessage()">${ICONS.send} Send</button>
+  </div>
+  <script>setTimeout(function(){ var w=document.getElementById('chatMessagesWrap'); if(w) w.scrollTop = w.scrollHeight; }, 30);<` + `/script` + `>
+  `;
+}
+
+function openChatWith(userId){
+  chatActiveUserId = userId;
+  App.render();
+}
+
+function sendChatMessage(){
+  const input = document.getElementById('chatInput');
+  if(!input || !chatActiveUserId) return;
+  const text = input.value;
+  if(!text.trim()) return;
+  sendMessage(chatActiveUserId, text);
+  input.value = '';
+  App.render();
+  document.getElementById('chatInput')?.focus();
+}
+
+function startChatPolling(){
+  clearInterval(chatPollTimer);
+  chatPollTimer = setInterval(()=>{
+    if(App.route === 'chat'){
+      refreshChatViewSafely();
+    } else {
+      App.buildNav();
+    }
+  }, 4000);
+}
+
+// Refreshes the chat thread/sidebar without ever rebuilding the input box,
+// so typing is never interrupted — even if the person pauses for a long time
+// before finishing their message. We skip the refresh entirely while the
+// input has focus or unsent text, and only patch the messages/contacts.
+function refreshChatViewSafely(){
+  const input = document.getElementById('chatInput');
+  const isTyping = input && (document.activeElement === input || input.value.trim().length > 0);
+  if(isTyping) return; // never touch the DOM while someone is mid-message
+
+  const savedScroll = document.getElementById('chatMessagesWrap')?.scrollTop;
+  App.render();
+  // restore scroll position so an incoming-message refresh doesn't yank the view
+  const wrap = document.getElementById('chatMessagesWrap');
+  if(wrap && savedScroll != null) wrap.scrollTop = savedScroll;
+}
+
+/* ---------------- BRANCHES VIEW (admin only) ---------------- */
+Views.branches = function(){
+  if(!isAdmin()) return emptyState('Admins only','Only an administrator can manage branches.');
+  const rows = DB.branches.map(b=>{
+    const inc = sumAmt(branchIncomes(b.id));
+    const exp = sumAmt(branchExpenses(b.id));
+    const userCount = DB.users.filter(u=>u.branchId===b.id).length;
+    return `<tr>
+      <td style="font-weight:600;">${escapeHtml(b.name)}</td>
+      <td class="muted">${escapeHtml(b.location||'—')}</td>
+      <td>${userCount}</td>
+      <td class="text-right num amt-income">${fmtRs(inc)}</td>
+      <td class="text-right num amt-expense">${fmtRs(exp)}</td>
+      <td class="text-right num" style="color:${inc-exp>=0?'var(--sage)':'var(--brick)'};font-weight:600;">${fmtRs(inc-exp)}</td>
+      <td>
+        <button class="btn btn-ghost btn-sm" onclick="App.switchBranch('${b.id}');App.navigate('dashboard')">View</button>
+        <button class="btn btn-ghost btn-sm" onclick="openBranchForm('${b.id}')">${ICONS.edit}</button>
+        <button class="btn btn-ghost btn-sm" onclick="deleteBranch('${b.id}')">${ICONS.trash}</button>
+      </td>
+    </tr>`;
+  }).join('');
+  return `
+  <div class="toolbar">
+    <div></div>
+    <button class="btn btn-primary btn-sm" onclick="openBranchForm()">${ICONS.plus} Create branch</button>
+  </div>
+  <div class="card card-pad">
+    ${DB.branches.length===0 ? emptyState('No branches yet','Create your first branch to get started.') : `
+    <table>
+      <thead><tr><th>Branch</th><th>Location</th><th>Users</th><th class="text-right">Total income</th><th class="text-right">Total expenses</th><th class="text-right">Net</th><th></th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`}
+  </div>
+  `;
+};
+
+function openBranchForm(id){
+  const editing = id ? DB.branches.find(x=>x.id===id) : null;
+  App.openModal(`
+    <div class="modal-head"><h3>${editing?'Edit branch':'Create branch'}</h3><button class="modal-close" onclick="App.closeModal()">&times;</button></div>
+    <div class="modal-body">
+      <div class="field">
+        <label>Branch name</label>
+        <input type="text" id="brForm_name" value="${editing?escapeHtml(editing.name):''}" placeholder="e.g. Pokhara Branch">
+      </div>
+      <div class="field">
+        <label>Location (optional)</label>
+        <input type="text" id="brForm_loc" value="${editing?escapeHtml(editing.location||''):''}" placeholder="e.g. Lakeside, Pokhara">
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="App.closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveBranch('${editing?editing.id:''}')">Save branch</button>
+    </div>
+  `);
+}
+function saveBranch(id){
+  const name = document.getElementById('brForm_name').value.trim();
+  const location = document.getElementById('brForm_loc').value.trim();
+  if(!name){ toast('Branch name is required.', 'error'); return; }
+  if(id){
+    const b = DB.branches.find(x=>x.id===id);
+    b.name = name; b.location = location;
+  } else {
+    DB.branches.push({ id: uid('br'), name, location, createdAt: todayBsString() });
+  }
+  saveDb();
+  App.closeModal();
+  toast('Branch saved.', 'success');
+  App.render();
+}
+function deleteBranch(id){
+  const hasData = DB.incomes.some(i=>i.branchId===id) || DB.expenses.some(e=>e.branchId===id) || DB.users.some(u=>u.branchId===id);
+  const msg = hasData ? 'This branch has users or financial records. Deleting it will permanently remove ALL of that data. Continue?' : 'Delete this branch?';
+  if(!confirm(msg)) return;
+  DB.branches = DB.branches.filter(b=>b.id!==id);
+  DB.incomes = DB.incomes.filter(i=>i.branchId!==id);
+  DB.expenses = DB.expenses.filter(e=>e.branchId!==id);
+  DB.users.forEach(u=>{ if(u.branchId===id) u.active=false; });
+  if(SESSION.branchId===id) SESSION.branchId = DB.branches[0] && DB.branches[0].id;
+  saveDb();
+  toast('Branch deleted.', 'success');
+  App.render();
+}
+
+/* ---------------- USERS VIEW ---------------- */
+Views.users = function(){
+  if(!canManageUsers()) return emptyState('Not permitted','Only admins and branch managers can manage users.');
+  const me = currentUser();
+  let visibleUsers = DB.users;
+  if(me.role==='manager'){ visibleUsers = DB.users.filter(u=>u.branchId===me.branchId); }
+  const branchMap = {}; DB.branches.forEach(b=>branchMap[b.id]=b.name);
+  const rows = visibleUsers.map(u=>`
+    <tr>
+      <td style="font-weight:600;">${escapeHtml(u.name||u.username)}</td>
+      <td class="muted">@${escapeHtml(u.username)}</td>
+      <td><span class="role-pill role-${u.role}">${u.role}</span></td>
+      <td>${u.branchId ? escapeHtml(branchMap[u.branchId]||'—') : '<span class="muted">All branches</span>'}</td>
+      <td>${u.active ? '<span class="badge badge-sage">Active</span>' : '<span class="badge badge-grey">Disabled</span>'}</td>
+      <td>
+        ${u.id!==me.id ? `
+        <button class="btn btn-ghost btn-sm" onclick="openUserForm('${u.id}')">${ICONS.edit}</button>
+        <button class="btn btn-ghost btn-sm" onclick="toggleUserActive('${u.id}')">${u.active?'Disable':'Enable'}</button>
+        <button class="btn btn-ghost btn-sm" onclick="deleteUser('${u.id}')">${ICONS.trash}</button>
+        ` : `<button class="btn btn-ghost btn-sm" onclick="openUserForm('${u.id}')">${ICONS.edit} (you)</button>`}
+      </td>
+    </tr>`).join('');
+  return `
+  <div class="toolbar">
+    <div></div>
+    <button class="btn btn-primary btn-sm" onclick="openUserForm()">${ICONS.plus} Create user</button>
+  </div>
+  <div class="card card-pad">
+    ${visibleUsers.length===0 ? emptyState('No users yet','Create a user to give someone access to a branch.') : `
+    <table>
+      <thead><tr><th>Name</th><th>Username</th><th>Role</th><th>Branch</th><th>Status</th><th></th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`}
+  </div>
+  `;
+};
+
+function openUserForm(id){
+  const me = currentUser();
+  const editing = id ? DB.users.find(x=>x.id===id) : null;
+  const isSelf = editing && editing.id===me.id;
+  let roleOptions = [];
+  if(me.role==='admin') roleOptions = ['admin','manager','staff'];
+  else roleOptions = ['staff'];
+  let branchOptions = DB.branches;
+  if(me.role==='manager') branchOptions = DB.branches.filter(b=>b.id===me.branchId);
+
+  App.openModal(`
+    <div class="modal-head"><h3>${editing?'Edit user':'Create user'}</h3><button class="modal-close" onclick="App.closeModal()">&times;</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="field">
+          <label>Full name</label>
+          <input type="text" id="usrForm_name" value="${editing?escapeHtml(editing.name||''):''}" placeholder="e.g. Sita Sharma">
+        </div>
+        <div class="field">
+          <label>Username</label>
+          <input type="text" id="usrForm_username" value="${editing?escapeHtml(editing.username):''}" placeholder="e.g. sita" ${isSelf?'':''}>
+        </div>
+        <div class="field">
+          <label>${editing?'New password (leave blank to keep current)':'Password'}</label>
+          <input type="password" id="usrForm_password" placeholder="${editing?'••••••••':'Minimum 4 characters'}">
+        </div>
+        <div class="field">
+          <label>Role</label>
+          <select id="usrForm_role" ${isSelf?'disabled':''} onchange="onUserRoleChange()">
+            ${roleOptions.map(r=>`<option value="${r}" ${editing&&editing.role===r?'selected':''}>${r.charAt(0).toUpperCase()+r.slice(1)}</option>`).join('')}
+          </select>
+        </div>
+        <div class="field full" id="usrForm_branchWrap" style="${editing&&editing.role==='admin'?'display:none;':''}">
+          <label>Branch</label>
+          <select id="usrForm_branch">
+            ${branchOptions.map(b=>`<option value="${b.id}" ${editing&&editing.branchId===b.id?'selected':''}>${escapeHtml(b.name)}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="App.closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveUser('${editing?editing.id:''}')">Save user</button>
+    </div>
+  `);
+}
+function onUserRoleChange(){
+  const role = document.getElementById('usrForm_role').value;
+  document.getElementById('usrForm_branchWrap').style.display = role==='admin' ? 'none' : '';
+}
+function saveUser(id){
+  const me = currentUser();
+  const editing = id ? DB.users.find(x=>x.id===id) : null;
+  const name = document.getElementById('usrForm_name').value.trim();
+  const username = document.getElementById('usrForm_username').value.trim();
+  const password = document.getElementById('usrForm_password').value;
+  const role = editing && editing.id===me.id ? editing.role : document.getElementById('usrForm_role').value;
+  const branchId = role==='admin' ? null : document.getElementById('usrForm_branch').value;
+
+  if(!name || !username){ toast('Name and username are required.', 'error'); return; }
+  const dupe = DB.users.find(u=>u.username.toLowerCase()===username.toLowerCase() && (!editing || u.id!==editing.id));
+  if(dupe){ toast('That username is already taken.', 'error'); return; }
+  if(!editing && (!password || password.length<4)){ toast('Password must be at least 4 characters.', 'error'); return; }
+  if(role!=='admin' && !branchId){ toast('Select a branch for this user.', 'error'); return; }
+
+  if(editing){
+    editing.name=name; editing.username=username; editing.role=role; editing.branchId=branchId;
+    if(password){ if(password.length<4){ toast('Password must be at least 4 characters.', 'error'); return; } editing.passHash = hashPass(password); }
+  } else {
+    DB.users.push({ id: uid('usr'), username, passHash: hashPass(password), name, role, branchId, active:true, createdAt: todayBsString() });
+  }
+  saveDb();
+  App.closeModal();
+  toast('User saved.', 'success');
+  App.render();
+}
+function toggleUserActive(id){
+  const u = DB.users.find(x=>x.id===id);
+  u.active = !u.active;
+  saveDb();
+  toast(u.active?'User enabled.':'User disabled.', 'success');
+  App.render();
+}
+function deleteUser(id){
+  if(!confirm('Delete this user permanently?')) return;
+  DB.users = DB.users.filter(u=>u.id!==id);
+  saveDb();
+  toast('User deleted.', 'success');
+  App.render();
+}
+
+/* ---------------- SETTINGS VIEW ---------------- */
+Views.settings = function(){
+  const b = activeBranch();
+  const me = currentUser();
+  const incCats = b ? getIncomeCategories(b.id) : [];
+  const expCats = b ? getExpenseCategories(b.id) : [];
+  const company = b ? getCompanySettings(b.id) : { name:'', address:'', pan:'', logo:'' };
+  const canEditCompany = me.role==='admin' || me.role==='manager';
+  return `
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="cat" onclick="switchSettingsTab('cat')">Categories</button>
+    <button class="tab-btn" data-tab="company" onclick="switchSettingsTab('company')">Company</button>
+    <button class="tab-btn" data-tab="acct" onclick="switchSettingsTab('acct')">My account</button>
+    <button class="tab-btn" data-tab="sync" onclick="switchSettingsTab('sync')">Google Sheets sync</button>
+  </div>
+
+  <div id="settingsTab_cat">
+    ${!b ? emptyState('No branch selected','Select or create a branch first.') : `
+    <div class="grid-2col">
+      <div class="card card-pad">
+        <div class="section-title">Income categories <button class="btn btn-sage btn-sm" onclick="addCategory('income')">${ICONS.plus} Add</button></div>
+        <div id="incCatList">
+          ${incCats.map(c=>categoryRow('income',c)).join('')}
+        </div>
+      </div>
+      <div class="card card-pad">
+        <div class="section-title">Expense categories <button class="btn btn-danger btn-sm" onclick="addCategory('expense')">${ICONS.plus} Add</button></div>
+        <div id="expCatList">
+          ${expCats.map(c=>categoryRow('expense',c)).join('')}
+        </div>
+      </div>
+    </div>`}
+  </div>
+
+  <div id="settingsTab_company" style="display:none;">
+    ${!b ? emptyState('No branch selected','Select or create a branch first.') : !canEditCompany ? `
+      <div class="card card-pad" style="max-width:520px;">
+        <div class="section-title">Company details</div>
+        <p class="muted">Only an admin or branch manager can edit company details. Contact them to make changes.</p>
+      </div>
+    ` : `
+    <div class="grid-main-side">
+      <div class="card card-pad">
+        <div class="section-title">Company details — ${escapeHtml(b.name)}</div>
+        <p class="muted" style="margin-bottom:16px;">Shown on printed registers, vouchers, and the Profit &amp; Loss statement for this branch.</p>
+        <div class="field">
+          <label>Company / Institution name</label>
+          <input type="text" id="coForm_name" value="${escapeHtml(company.name||'')}" placeholder="e.g. Everest English School">
+        </div>
+        <div class="field">
+          <label>Address</label>
+          <input type="text" id="coForm_address" value="${escapeHtml(company.address||'')}" placeholder="e.g. Bagbazar, Kathmandu">
+        </div>
+        <div class="field">
+          <label>PAN / VAT No.</label>
+          <input type="text" id="coForm_pan" value="${escapeHtml(company.pan||'')}" placeholder="e.g. 123456789">
+        </div>
+        <div class="field">
+          <label>Logo</label>
+          <input type="file" id="coForm_logoFile" accept="image/*" onchange="handleLogoUpload(this)">
+          <div style="margin-top:8px;display:flex;gap:10px;align-items:center;">
+            ${company.logo ? `<img id="coLogoPreview" src="${company.logo}" style="width:48px;height:48px;object-fit:contain;border:1px solid var(--line);border-radius:4px;">
+            <button class="btn btn-ghost btn-sm" onclick="clearLogo()">Remove logo</button>` : `<span class="muted" id="coLogoPreviewEmpty">No logo uploaded</span>`}
+          </div>
+        </div>
+        <button class="btn btn-primary" style="margin-top:8px;" onclick="saveCompanySettings()">Save company details</button>
+      </div>
+      <div class="card card-pad">
+        <div class="section-title" style="font-size:13px;">Letterhead preview</div>
+        <div id="letterheadPreview" style="border:1px dashed var(--line);border-radius:6px;padding:14px;display:flex;gap:10px;align-items:center;">
+          ${company.logo?`<img src="${company.logo}" style="width:40px;height:40px;object-fit:contain;">`:''}
+          <div>
+            <div style="font-family:var(--font-display);font-weight:700;font-size:14px;" id="lhName">${escapeHtml(company.name||'Company name')}</div>
+            <div class="muted" style="font-size:11px;" id="lhMeta">${escapeHtml(company.address||'Address')}${company.pan?' · PAN: '+escapeHtml(company.pan):''}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    `}
+  </div>
+
+  <div id="settingsTab_acct" style="display:none;">
+    <div class="card card-pad" style="max-width:440px;">
+      <div class="section-title">Change my password</div>
+      <div class="field"><label>Current password</label><input type="password" id="pwForm_current"></div>
+      <div class="field"><label>New password</label><input type="password" id="pwForm_new"></div>
+      <div class="field"><label>Confirm new password</label><input type="password" id="pwForm_confirm"></div>
+      <button class="btn btn-primary" onclick="changeMyPassword()">Update password</button>
+    </div>
+  </div>
+
+  <div id="settingsTab_sync" style="display:none;">
+    <div class="card card-pad" style="max-width:600px;">
+      <div class="section-title">Google Sheets sync</div>
+      <p class="muted" style="margin-bottom:14px;">All data is saved automatically to your browser's local storage. To also back it up automatically to a Google Sheet, deploy the included Apps Script and paste its Web App URL into the <code>SHEETS_WEBAPP_URL</code> constant near the top of this file's script, then re-save/re-host the HTML file.</p>
+      <p style="margin-bottom:14px;"><b>Current status:</b> ${sheetsConfigured() ? '<span class="badge badge-sage">Configured</span>' : '<span class="badge badge-grey">Not connected</span>'}</p>
+      ${sheetsConfigured()?`<button class="btn btn-secondary" onclick="pullFromSheets()">Pull latest from Sheets</button> <button class="btn btn-secondary" onclick="doSync()">Force sync now</button>`:''}
+      <p class="muted" style="margin-top:14px;font-size:12px;">Last synced: ${DB.meta.lastSyncAt ? new Date(DB.meta.lastSyncAt).toLocaleString() : 'Never'}</p>
+    </div>
+  </div>
+  `;
+};
+
+function switchSettingsTab(tab){
+  ['cat','company','acct','sync'].forEach(t=>{
+    document.getElementById('settingsTab_'+t).style.display = t===tab?'':'none';
+  });
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active', b.dataset.tab===tab));
+}
+
+let pendingLogoDataUrl = null;
+function handleLogoUpload(input){
+  const file = input.files[0];
+  if(!file) return;
+  if(file.size > 600*1024){ toast('Please use a logo image under 600KB.', 'error'); return; }
+  const reader = new FileReader();
+  reader.onload = function(e){
+    pendingLogoDataUrl = e.target.result;
+    const preview = document.getElementById('letterheadPreview');
+    const existingImg = preview.querySelector('img');
+    if(existingImg) existingImg.src = pendingLogoDataUrl;
+    else preview.insertAdjacentHTML('afterbegin', `<img src="${pendingLogoDataUrl}" style="width:40px;height:40px;object-fit:contain;">`);
+    toast('Logo ready — click "Save company details" to apply.', 'success');
+  };
+  reader.readAsDataURL(file);
+}
+function clearLogo(){
+  pendingLogoDataUrl = '';
+  const preview = document.getElementById('letterheadPreview');
+  const existingImg = preview.querySelector('img');
+  if(existingImg) existingImg.remove();
+  toast('Logo will be removed when you save.', '');
+}
+function saveCompanySettings(){
+  const b = activeBranch();
+  if(!b) return;
+  const name = document.getElementById('coForm_name').value.trim();
+  const address = document.getElementById('coForm_address').value.trim();
+  const pan = document.getElementById('coForm_pan').value.trim();
+  const existing = getCompanySettings(b.id);
+  const logo = pendingLogoDataUrl !== null ? pendingLogoDataUrl : (existing.logo||'');
+  setCompanySettings(b.id, { name, address, pan, logo });
+  pendingLogoDataUrl = null;
+  saveDb();
+  toast('Company details saved.', 'success');
+  App.render();
+}
+
+
+function categoryRow(kind, name){
+  return `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--line-soft);">
+    <span>${escapeHtml(name)}</span>
+    <button class="btn btn-ghost btn-sm" onclick="removeCategory('${kind}','${escapeHtml(name).replace(/'/g,"\\'")}')">${ICONS.trash}</button>
+  </div>`;
+}
+function addCategory(kind){
+  const b = activeBranch();
+  const name = prompt(`New ${kind} category name:`);
+  if(!name || !name.trim()) return;
+  const store = kind==='income' ? DB.incomeCategories : DB.expenseCategories;
+  if(!store.byBranch[b.id]) store.byBranch[b.id] = (kind==='income'?getIncomeCategories(b.id):getExpenseCategories(b.id)).slice();
+  if(store.byBranch[b.id].includes(name.trim())){ toast('Category already exists.', 'error'); return; }
+  store.byBranch[b.id].push(name.trim());
+  saveDb();
+  App.render();
+}
+function removeCategory(kind, name){
+  const b = activeBranch();
+  const store = kind==='income' ? DB.incomeCategories : DB.expenseCategories;
+  if(!store.byBranch[b.id]) store.byBranch[b.id] = (kind==='income'?getIncomeCategories(b.id):getExpenseCategories(b.id)).slice();
+  store.byBranch[b.id] = store.byBranch[b.id].filter(c=>c!==name);
+  saveDb();
+  App.render();
+}
+function changeMyPassword(){
+  const me = currentUser();
+  const cur = document.getElementById('pwForm_current').value;
+  const next = document.getElementById('pwForm_new').value;
+  const conf = document.getElementById('pwForm_confirm').value;
+  if(hashPass(cur) !== me.passHash){ toast('Current password is incorrect.', 'error'); return; }
+  if(next.length<4){ toast('New password must be at least 4 characters.', 'error'); return; }
+  if(next!==conf){ toast('Passwords do not match.', 'error'); return; }
+  me.passHash = hashPass(next);
+  saveDb();
+  toast('Password updated.', 'success');
+  document.getElementById('pwForm_current').value='';
+  document.getElementById('pwForm_new').value='';
+  document.getElementById('pwForm_confirm').value='';
+}
+
+/* ---------------- PRINT ENGINE ---------------- */
+function printShell(title, branchName, bodyHtml){
+  const b = activeBranch();
+  const company = b ? getCompanySettings(b.id) : { name:'', address:'', pan:'', logo:'' };
+  const hasCompany = company.name || company.address || company.pan || company.logo;
+  const win = window.open('', '_blank');
+  win.document.write(`
+  <!DOCTYPE html><html><head><meta charset="utf-8"><title>${escapeHtml(title)}</title>
+  <style>
+    @page { size: A4; margin: 16mm; }
+    body{ font-family: 'Georgia', 'Times New Roman', serif; color:#1B2A4A; padding:0; margin:0; }
+    .letterhead{ display:flex; align-items:center; gap:14px; margin-bottom:14px; }
+    .letterhead img{ width:56px; height:56px; object-fit:contain; }
+    .letterhead .co-name{ font-size:19px; font-weight:700; margin:0; }
+    .letterhead .co-meta{ font-size:11.5px; color:#555; margin-top:2px; }
+    .ph{ display:flex; justify-content:space-between; align-items:flex-end; border-bottom:2.5px solid #1B2A4A; padding-bottom:10px; margin-bottom:18px; }
+    .ph h1{ font-size:22px; margin:0; }
+    .ph .branch{ font-size:13px; color:#555; margin-top:2px; }
+    .ph .meta{ text-align:right; font-size:12px; color:#555; }
+    table{ width:100%; border-collapse:collapse; font-size:12.5px; margin-bottom:14px; }
+    th{ text-align:left; border-bottom:1.5px solid #1B2A4A; padding:6px 8px; font-size:11px; text-transform:uppercase; letter-spacing:0.03em; }
+    td{ padding:6px 8px; border-bottom:1px solid #ddd; }
+    tfoot td{ border-top:2px solid #1B2A4A; border-bottom:none; font-weight:700; }
+    .right{ text-align:right; font-family: 'Courier New', monospace; }
+    .section-h{ font-size:14px; font-weight:700; margin:18px 0 8px; border-bottom:1px solid #ccc; padding-bottom:4px; }
+    .stamp-print{ display:inline-block; border:3px solid; border-radius:50%; width:90px; height:90px; text-align:center; padding-top:22px; font-weight:700; transform:rotate(-8deg); margin-top:10px; }
+    .foot-note{ margin-top:30px; font-size:11px; color:#777; text-align:center; }
+    @media print { .no-print{ display:none; } }
+  </style></head><body>
+  <div class="no-print" style="text-align:right;padding:10px;background:#f0ede4;">
+    <button onclick="window.print()" style="padding:8px 16px;font-size:13px;cursor:pointer;">Print / Save as PDF</button>
+  </div>
+  <div style="padding:0 4px;">
+  ${hasCompany ? `
+  <div class="letterhead">
+    ${company.logo ? `<img src="${company.logo}">` : ''}
+    <div>
+      <p class="co-name">${escapeHtml(company.name||'')}</p>
+      <div class="co-meta">${escapeHtml(company.address||'')}${company.pan?' &nbsp;·&nbsp; PAN: '+escapeHtml(company.pan):''}</div>
+    </div>
+  </div>` : ''}
+  <div class="ph">
+    <div>
+      <h1>${escapeHtml(title)}</h1>
+      <div class="branch">${escapeHtml(branchName)}</div>
+    </div>
+    <div class="meta">Printed on ${bsLabelFromString(todayBsString())} (BS)<br>${new Date().toLocaleDateString()}</div>
+  </div>
+  ${bodyHtml}
+  <div class="foot-note">Generated by Khata — Branch Accounts</div>
+  </div>
+  </body></html>`);
+  win.document.close();
+}
+
+function printLedger(kind){
+  const b = activeBranch();
+  if(!b){ toast('No branch selected.', 'error'); return; }
+  let body = '';
+  if(kind==='income' || kind==='both'){
+    const list = currentIncomeFiltered ? (document.getElementById('incomeTableWrap') ? currentIncomeFiltered() : branchIncomes(b.id)) : branchIncomes(b.id);
+    const rows = (kind==='income' && document.getElementById('incomeTableWrap')) ? currentIncomeFiltered() : branchIncomes(b.id).sort((a,c)=>c.date.localeCompare(a.date));
+    body += `<div class="section-h">Income Register</div>` + ledgerTable(rows,'income');
+  }
+  if(kind==='expense' || kind==='both'){
+    const rows = (kind==='expense' && document.getElementById('expenseTableWrap')) ? currentExpenseFiltered() : branchExpenses(b.id).sort((a,c)=>c.date.localeCompare(a.date));
+    body += `<div class="section-h">Expense Register</div>` + ledgerTable(rows,'expense');
+  }
+  printShell(kind==='both'?'Combined Daybook':(kind==='income'?'Income Register':'Expense Register'), b.name, body);
+}
+
+function ledgerTable(rows, kind){
+  const total = sumAmt(rows);
+  return `<table>
+    <thead><tr><th>Voucher No.</th><th>Date (BS)</th><th>Category</th><th>Description</th><th>Ref</th><th class="right">Amount</th></tr></thead>
+    <tbody>
+      ${rows.length===0 ? `<tr><td colspan="6" style="text-align:center;color:#999;">No entries</td></tr>` :
+        rows.map(r=>`<tr><td>${escapeHtml(r.voucherNo||'—')}</td><td>${bsLabelFromString(r.date)}</td><td>${escapeHtml(r.category)}</td><td>${escapeHtml(r.description||'—')}</td><td>${escapeHtml(r.ref||'—')}</td><td class="right">${fmtRs(r.amount)}</td></tr>`).join('')}
+    </tbody>
+    <tfoot><tr><td colspan="5">Total</td><td class="right">${fmtRs(total)}</td></tr></tfoot>
+  </table>`;
+}
+
+function printPnl(){
+  const b = activeBranch();
+  if(!b){ toast('No branch selected.', 'error'); return; }
+  const range = pnlCurrentRange || currentBsMonthRange();
+  const incomes = branchIncomes(b.id).filter(i=>inRange(i.date, range.from, range.to));
+  const expenses = branchExpenses(b.id).filter(e=>inRange(e.date, range.from, range.to));
+  const incByCat = groupSum(incomes);
+  const expByCat = groupSum(expenses);
+  const incTotal = sumAmt(incomes);
+  const expTotal = sumAmt(expenses);
+  const net = incTotal - expTotal;
+  const isProfit = net>=0;
+  const body = `
+    <p style="font-size:13px;color:#555;">Period: ${bsLabelFromString(range.from)} to ${bsLabelFromString(range.to)} (BS)</p>
+    <div class="section-h">Income</div>
+    <table>
+      <thead><tr><th>Category</th><th class="right">Amount</th></tr></thead>
+      <tbody>${Object.keys(incByCat).length===0?`<tr><td colspan="2" style="text-align:center;color:#999;">No income</td></tr>`:Object.entries(incByCat).sort((a,c)=>c[1]-a[1]).map(([c,a])=>`<tr><td>${escapeHtml(c)}</td><td class="right">${fmtRs(a)}</td></tr>`).join('')}</tbody>
+      <tfoot><tr><td>Total income</td><td class="right">${fmtRs(incTotal)}</td></tr></tfoot>
+    </table>
+    <div class="section-h">Expenses</div>
+    <table>
+      <thead><tr><th>Category</th><th class="right">Amount</th></tr></thead>
+      <tbody>${Object.keys(expByCat).length===0?`<tr><td colspan="2" style="text-align:center;color:#999;">No expenses</td></tr>`:Object.entries(expByCat).sort((a,c)=>c[1]-a[1]).map(([c,a])=>`<tr><td>${escapeHtml(c)}</td><td class="right">${fmtRs(a)}</td></tr>`).join('')}</tbody>
+      <tfoot><tr><td>Total expenses</td><td class="right">${fmtRs(expTotal)}</td></tr></tfoot>
+    </table>
+    <div style="text-align:center;margin-top:24px;">
+      <div class="stamp-print" style="color:${isProfit?'#4A7C59':'#A8453A'};">${isProfit?'PROFIT':'LOSS'}<br><span style="font-size:11px;">${fmtRs(Math.abs(net))}</span></div>
+    </div>
+  `;
+  printShell('Profit & Loss Statement', b.name, body);
+}
+
+/* ---------------- VOUCHER PRINT (single-entry, Nepali accounting style) ---------------- */
+const NUM_WORDS_ONES = ["","One","Two","Three","Four","Five","Six","Seven","Eight","Nine","Ten",
+  "Eleven","Twelve","Thirteen","Fourteen","Fifteen","Sixteen","Seventeen","Eighteen","Nineteen"];
+const NUM_WORDS_TENS = ["","","Twenty","Thirty","Forty","Fifty","Sixty","Seventy","Eighty","Ninety"];
+
+function twoDigitWords(n){
+  if(n<20) return NUM_WORDS_ONES[n];
+  return NUM_WORDS_TENS[Math.floor(n/10)] + (n%10 ? " "+NUM_WORDS_ONES[n%10] : "");
+}
+function threeDigitWords(n){
+  const h = Math.floor(n/100), r = n%100;
+  let s = h ? NUM_WORDS_ONES[h]+" Hundred" : "";
+  if(r) s += (s?" ":"")+twoDigitWords(r);
+  return s;
+}
+// Indian/Nepali numbering: ones, hundreds, thousands, lakhs, crores
+function numberToWordsNepaliStyle(num){
+  num = Math.round(num);
+  if(num===0) return "Zero";
+  const crore = Math.floor(num/10000000); num %= 10000000;
+  const lakh = Math.floor(num/100000); num %= 100000;
+  const thousand = Math.floor(num/1000); num %= 1000;
+  const rest = num;
+  let parts = [];
+  if(crore) parts.push(threeDigitWords(crore)+" Crore");
+  if(lakh) parts.push(threeDigitWords(lakh)+" Lakh");
+  if(thousand) parts.push(threeDigitWords(thousand)+" Thousand");
+  if(rest) parts.push(threeDigitWords(rest));
+  return parts.join(" ");
+}
+function amountInWords(amount){
+  const rupees = Math.floor(amount);
+  const paisa = Math.round((amount - rupees) * 100);
+  let words = numberToWordsNepaliStyle(rupees) + " Rupees";
+  if(paisa > 0) words += " and " + twoDigitWords(paisa) + " Paisa";
+  return words + " Only";
+}
+
+function printVoucher(kind, id){
+  const b = activeBranch();
+  if(!b){ toast('No branch selected.', 'error'); return; }
+  const rec = kind==='income' ? DB.incomes.find(x=>x.id===id) : DB.expenses.find(x=>x.id===id);
+  if(!rec){ toast('Entry not found.', 'error'); return; }
+  const isIncome = kind==='income';
+  const voucherLabel = isIncome ? 'Receipt Voucher' : 'Payment Voucher';
+  const partyLabel = isIncome ? 'Received From' : 'Paid To';
+  const methodLabel = isIncome ? 'Received Via' : 'Paid Via';
+  const accentColor = isIncome ? '#4A7C59' : '#A8453A';
+
+  const body = `
+    <div style="border:1.5px solid #1B2A4A; border-radius:6px; padding:0; margin-top:6px;">
+      <div style="background:${accentColor}; color:white; padding:10px 18px; display:flex; justify-content:space-between; align-items:center; border-radius:6px 6px 0 0;">
+        <div style="font-size:16px; font-weight:700; letter-spacing:0.02em;">${voucherLabel.toUpperCase()}</div>
+        <div style="font-family:'Courier New',monospace; font-size:14px; font-weight:700;">${escapeHtml(rec.voucherNo||'—')}</div>
+      </div>
+      <div style="padding:20px 24px;">
+        <table style="margin-bottom:10px;">
+          <tbody>
+            <tr><td style="width:140px; font-weight:700; border-bottom:none;">Date (BS)</td><td style="border-bottom:none;">${bsLabelFromString(rec.date)}</td></tr>
+            <tr><td style="font-weight:700; border-bottom:none;">Category</td><td style="border-bottom:none;">${escapeHtml(rec.category)}</td></tr>
+            <tr><td style="font-weight:700; border-bottom:none;">${partyLabel} / Narration</td><td style="border-bottom:none;">${escapeHtml(rec.description||'—')}</td></tr>
+            <tr><td style="font-weight:700; border-bottom:none;">${methodLabel}</td><td style="border-bottom:none;">${escapeHtml(rec.method||'—')}</td></tr>
+            <tr><td style="font-weight:700; border-bottom:none;">Reference No.</td><td style="border-bottom:none;">${escapeHtml(rec.ref||'—')}</td></tr>
+          </tbody>
+        </table>
+        <div style="border-top:1.5px dashed #999; margin:14px 0;"></div>
+        <table style="margin-bottom:6px;">
+          <tbody>
+            <tr><td style="width:140px; font-weight:700; border-bottom:none; vertical-align:top;">Amount in Words</td><td style="border-bottom:none; font-style:italic;">${amountInWords(rec.amount)}</td></tr>
+          </tbody>
+        </table>
+        <div style="text-align:right; margin-top:6px;">
+          <span style="font-size:13px; color:#555;">Amount</span>
+          <span style="font-size:22px; font-weight:700; font-family:'Courier New',monospace; color:${accentColor}; margin-left:10px;">${fmtRs(rec.amount)}</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; margin-top:60px; padding-top:6px;">
+          <div style="text-align:center; width:45%;">
+            <div style="border-top:1px solid #1B2A4A; padding-top:6px; font-size:12px;">Prepared By</div>
+          </div>
+          <div style="text-align:center; width:45%;">
+            <div style="border-top:1px solid #1B2A4A; padding-top:6px; font-size:12px;">${isIncome?'Received By':'Approved By'}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  printShell(voucherLabel, b.name, body);
+}
+
+/* ---------------- PARTY PAYMENT VOUCHER PRINT (2 copies on 1 A4 page) ---------------- */
+function buildVoucherHalfHtml(p, t, b, company, copyLabel){
+  const isReceipt = t.type==='receipt';
+  const voucherLabel = isReceipt ? 'Receipt Voucher' : 'Payment Voucher';
+  const partyLabel = isReceipt ? 'Received From' : 'Paid To';
+  const methodLabel = isReceipt ? 'Received Via' : 'Paid Via';
+  const accentColor = isReceipt ? '#4A7C59' : '#A8453A';
+  const hasCompany = company && (company.name || company.address || company.pan || company.logo);
+  return `
+  <div class="voucher-half">
+    <div class="vh-copy-label">${escapeHtml(copyLabel)}</div>
+    ${hasCompany ? `
+    <div class="vh-letterhead">
+      ${company.logo ? `<img src="${company.logo}">` : ''}
+      <div>
+        <div class="vh-co-name">${escapeHtml(company.name||'')}</div>
+        <div class="vh-co-meta">${escapeHtml(company.address||'')}${company.pan?' · PAN: '+escapeHtml(company.pan):''}</div>
+      </div>
+    </div>` : ''}
+    <div class="vh-head" style="background:${accentColor};">
+      <div class="vh-title">${voucherLabel.toUpperCase()}</div>
+      <div class="vh-vno">${escapeHtml(t.voucherNo||'—')}</div>
+    </div>
+    <div class="vh-body">
+      <table class="vh-table">
+        <tr><td class="vh-label">Branch</td><td>${escapeHtml(b.name)}</td></tr>
+        <tr><td class="vh-label">Date (BS)</td><td>${bsLabelFromString(t.date)}</td></tr>
+        <tr><td class="vh-label">${partyLabel}</td><td>${escapeHtml(p.name)}</td></tr>
+        <tr><td class="vh-label">Narration</td><td>${escapeHtml(t.description||'—')}</td></tr>
+        <tr><td class="vh-label">${methodLabel}</td><td>${escapeHtml(t.method||'—')}</td></tr>
+        <tr><td class="vh-label">Reference No.</td><td>${escapeHtml(t.ref||'—')}</td></tr>
+      </table>
+      <div class="vh-words"><span class="vh-label">Amount in Words:</span> <span style="font-style:italic;">${amountInWords(t.amount)}</span></div>
+      <div class="vh-amount" style="color:${accentColor};">${fmtRs(t.amount)}</div>
+      <div class="vh-sign-row">
+        <div class="vh-sign">Prepared By</div>
+        <div class="vh-sign">${isReceipt?'Received By':'Approved By'}</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function printPartyVoucher(txnId){
+  const t = DB.partyTransactions.find(x=>x.id===txnId);
+  if(!t){ toast('Transaction not found.', 'error'); return; }
+  const p = DB.parties.find(x=>x.id===t.partyId);
+  const b = DB.branches.find(x=>x.id===t.branchId) || activeBranch();
+  const company = getCompanySettings(b.id);
+
+  const halfOffice = buildVoucherHalfHtml(p, t, b, company, 'Office Copy');
+  const halfParty = buildVoucherHalfHtml(p, t, b, company, 'Party Copy');
+
+  const win = window.open('', '_blank');
+  win.document.write(`
+  <!DOCTYPE html><html><head><meta charset="utf-8"><title>${escapeHtml(t.type==='receipt'?'Receipt Voucher':'Payment Voucher')} — ${escapeHtml(t.voucherNo||'')}</title>
+  <style>
+    @page { size: A4; margin: 10mm; }
+    *{ box-sizing:border-box; }
+    body{ font-family:'Georgia','Times New Roman',serif; color:#1B2A4A; margin:0; padding:0; }
+    .page{ display:flex; flex-direction:column; height:277mm; gap:6mm; padding:4mm; }
+    .voucher-half{ flex:1; border:1.5px solid #1B2A4A; border-radius:6px; position:relative; display:flex; flex-direction:column; overflow:hidden; }
+    .vh-copy-label{ position:absolute; top:8px; right:14px; font-size:10px; letter-spacing:0.05em; text-transform:uppercase; color:#888; font-family:'Inter',sans-serif; }
+    .vh-letterhead{ display:flex; align-items:center; gap:10px; padding:10px 16px 0; }
+    .vh-letterhead img{ width:34px; height:34px; object-fit:contain; }
+    .vh-co-name{ font-size:14px; font-weight:700; }
+    .vh-co-meta{ font-size:10px; color:#555; }
+    .vh-head{ color:white; padding:7px 16px; display:flex; justify-content:space-between; align-items:center; margin-top:6px; }
+    .vh-title{ font-size:13.5px; font-weight:700; letter-spacing:0.03em; }
+    .vh-vno{ font-family:'Courier New',monospace; font-size:12.5px; font-weight:700; }
+    .vh-body{ padding:12px 18px; flex:1; display:flex; flex-direction:column; }
+    .vh-table{ width:100%; border-collapse:collapse; font-size:12px; margin-bottom:8px; }
+    .vh-table td{ padding:3px 6px; vertical-align:top; }
+    .vh-label{ font-weight:700; width:130px; white-space:nowrap; }
+    .vh-words{ font-size:11.5px; border-top:1px dashed #999; padding-top:6px; margin-top:2px; }
+    .vh-amount{ text-align:right; font-size:20px; font-weight:700; font-family:'Courier New',monospace; margin-top:8px; }
+    .vh-sign-row{ display:flex; justify-content:space-between; margin-top:auto; padding-top:18px; }
+    .vh-sign{ border-top:1px solid #1B2A4A; padding-top:5px; font-size:11px; width:42%; text-align:center; }
+    .no-print{ text-align:right; padding:8px; background:#f0ede4; }
+    @media print { .no-print{ display:none; } .page{ height:auto; } }
+  </style></head><body>
+  <div class="no-print"><button onclick="window.print()" style="padding:8px 16px;font-size:13px;cursor:pointer;">Print / Save as PDF (2 copies, 1 page)</button></div>
+  <div class="page">
+    ${halfOffice}
+    ${halfParty}
+  </div>
+  </body></html>`);
+  win.document.close();
+}
+
+function printPartyLedger(partyId){
+  const p = DB.parties.find(x=>x.id===partyId);
+  if(!p){ toast('Party not found.', 'error'); return; }
+  const b = activeBranch();
+  const txns = partyTransactionsFor(partyId);
+  let running = 0;
+  const rows = txns.map(t=>{
+    running += (t.type==='receipt' ? t.amount : -t.amount);
+    return `<tr><td>${escapeHtml(t.voucherNo||'—')}</td><td>${bsLabelFromString(t.date)}</td><td>${t.type==='receipt'?'Receipt':'Payment'}</td><td>${escapeHtml(t.description||'—')}</td><td class="right">${t.type==='receipt'?'+':'-'}${fmtRs(t.amount)}</td><td class="right">${fmtRs(running)}</td></tr>`;
+  }).join('');
+  const bal = partyBalance(partyId);
+  const body = `
+    <p style="font-size:13px;color:#555;">Party: <b>${escapeHtml(p.name)}</b> ${p.phone?'· '+escapeHtml(p.phone):''} ${p.type?'· '+escapeHtml(p.type):''}</p>
+    <table>
+      <thead><tr><th>Voucher No.</th><th>Date (BS)</th><th>Type</th><th>Narration</th><th class="right">Amount</th><th class="right">Balance</th></tr></thead>
+      <tbody>${txns.length===0?`<tr><td colspan="6" style="text-align:center;color:#999;">No transactions</td></tr>`:rows}</tbody>
+    </table>
+    <div style="text-align:right;margin-top:14px;font-size:14px;font-weight:700;color:${bal>=0?'#4A7C59':'#A8453A'};">
+      Closing balance: ${fmtRs(Math.abs(bal))} (${bal>=0?'Due from party':'Due to party'})
+    </div>
+  `;
+  printShell('Party Ledger Statement', b.name, body);
+}
+
+/* ---------------- INIT ---------------- */
+App.init();
+</script>
+</body>
+</html>
