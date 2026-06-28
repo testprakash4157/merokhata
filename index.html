@@ -343,8 +343,32 @@ a{color:var(--brass-dark);text-decoration:none;}
   height:100vh;
   overflow-y:auto;
 }
+.page-head-sticky{position:sticky;top:0;z-index:11;}
+.system-header{
+  background:var(--ink);
+  color:var(--brass-light);
+  padding:7px 32px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  font-size:12.5px;
+  flex-wrap:wrap;
+}
+.system-header .co-name{
+  font-family:var(--font-display);
+  font-weight:700;
+  font-size:14px;
+  color:#fff;
+  letter-spacing:0.01em;
+}
+.system-header .nep-clock{
+  font-family:var(--font-mono);
+  font-size:12px;
+  color:var(--brass-light);
+  white-space:nowrap;
+}
 .topbar{
-  position:sticky;top:0;
   background:var(--paper-raised);
   border-bottom:1px solid var(--line);
   padding:16px 32px;
@@ -363,6 +387,17 @@ a{color:var(--brass-dark);text-decoration:none;}
 }
 .topbar .sub{font-size:12px;color:var(--ink-faint);font-weight:400;margin-top:2px;}
 .topbar-actions{display:flex;gap:10px;align-items:center;}
+
+.app-footer{
+  flex-shrink:0;
+  padding:14px 32px;
+  text-align:center;
+  font-size:11.5px;
+  color:var(--ink-faint);
+  border-top:1px solid var(--line-soft);
+  background:var(--paper-raised);
+}
+.app-footer b{color:var(--ink-soft);font-weight:600;}
 
 .sync-pill{
   display:flex;align-items:center;gap:6px;
@@ -716,6 +751,8 @@ select.filter-select, input.filter-input{
   .form-grid{grid-template-columns:1fr;}
   .grid-2col, .grid-main-side, .grid-pnl{grid-template-columns:1fr;}
   .menu-toggle{display:flex !important;}
+  .system-header{padding:7px 18px;flex-direction:column;align-items:flex-start;gap:2px;}
+  .app-footer{padding:12px 18px;}
 }
 @media (max-width: 480px){
   .card-pad > table, .card-pad > div > table{min-width:480px;}
@@ -728,6 +765,13 @@ select.filter-select, input.filter-input{
 </style>
 </head>
 <body>
+
+<!-- ============== BOOT OVERLAY (briefly shown only when Sheets sync is configured, while we
+     check the server for an existing dataset before deciding what to show) ============== -->
+<div id="bootOverlay" style="position:fixed;inset:0;background:var(--paper);display:none;align-items:center;justify-content:center;z-index:500;flex-direction:column;gap:10px;">
+  <div style="width:44px;height:44px;border-radius:50%;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:18px;color:var(--ink);">ख</div>
+  <div style="font-family:var(--font-body);font-size:13px;color:var(--ink-soft);">Connecting…</div>
+</div>
 
 <!-- ============== LOGIN SCREEN ============== -->
 <div id="loginScreen">
@@ -785,22 +829,29 @@ select.filter-select, input.filter-input{
   </aside>
 
   <main class="main">
-    <div class="topbar">
-      <div style="display:flex;align-items:center;gap:12px;">
-        <button class="menu-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
-        <div>
-          <h2 id="pageTitle">Dashboard</h2>
-          <div class="sub" id="pageSubtitle"></div>
-        </div>
+    <div class="page-head-sticky">
+      <div class="system-header" id="systemHeader">
+        <div class="co-name" id="systemHeaderCompany">Khata — Branch Accounts</div>
+        <div class="nep-clock" id="systemHeaderClock">—</div>
       </div>
-      <div class="topbar-actions">
-        <div class="sync-pill" id="syncPill">
-          <span class="sync-dot" id="syncDot"></span>
-          <span id="syncLabel">Not connected</span>
+      <div class="topbar">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <button class="menu-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
+          <div>
+            <h2 id="pageTitle">Dashboard</h2>
+            <div class="sub" id="pageSubtitle"></div>
+          </div>
+        </div>
+        <div class="topbar-actions">
+          <div class="sync-pill" id="syncPill">
+            <span class="sync-dot" id="syncDot"></span>
+            <span id="syncLabel">Not connected</span>
+          </div>
         </div>
       </div>
     </div>
     <div class="content" id="pageContent"></div>
+    <footer class="app-footer">Developed by <b>Prakash Bhandari</b> · Contact: 9851234157</footer>
   </main>
 </div>
 
@@ -892,6 +943,32 @@ function todayBsString(){ return bsString(todayBs()); }
 function bsStringToObj(s){ const [y,m,d]=s.split('-').map(Number); return {y,m,d}; }
 function bsLabelFromString(s){ return bsLabel(bsStringToObj(s)); }
 
+/* ---------------- SYSTEM HEADER (company name + live Nepali date/time) ---------------- */
+function formatNepaliDateTime(){
+  const weekday = new Date().toLocaleDateString('en-US', { weekday:'long' });
+  const time = new Date().toLocaleTimeString('en-US', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+  return `${weekday}, ${bsLabel(todayBs())} · ${time}`;
+}
+function updateSystemClock(){
+  const el = document.getElementById('systemHeaderClock');
+  if(el) el.textContent = formatNepaliDateTime();
+}
+function renderSystemHeader(){
+  const nameEl = document.getElementById('systemHeaderCompany');
+  if(!nameEl) return;
+  const branchId = activeBranchId();
+  const settings = branchId ? getCompanySettings(branchId) : null;
+  const b = activeBranch();
+  nameEl.textContent = (settings && settings.name) ? settings.name : (b ? b.name : 'Khata — Branch Accounts');
+  updateSystemClock();
+}
+let systemClockTimer = null;
+function startSystemClock(){
+  clearInterval(systemClockTimer);
+  updateSystemClock();
+  systemClockTimer = setInterval(updateSystemClock, 1000);
+}
+
 /* ---------------- UTILITIES ---------------- */
 function uid(prefix){ return prefix+'_'+Date.now().toString(36)+Math.random().toString(36).slice(2,8); }
 function fmtRs(n){
@@ -946,6 +1023,20 @@ function defaultDb(){
 }
 
 let DB = null;
+function normalizeDb(){
+  if(!DB.incomeCategories) DB.incomeCategories = { byBranch:{}, default: DEFAULT_INCOME_CATEGORIES.slice() };
+  if(!DB.expenseCategories) DB.expenseCategories = { byBranch:{}, default: DEFAULT_EXPENSE_CATEGORIES.slice() };
+  if(!DB.companySettings) DB.companySettings = { byBranch:{} };
+  if(!DB.voucherCounters) DB.voucherCounters = { byBranch:{} };
+  if(!DB.branches) DB.branches = [];
+  if(!DB.users) DB.users = [];
+  if(!DB.incomes) DB.incomes = [];
+  if(!DB.expenses) DB.expenses = [];
+  if(!DB.parties) DB.parties = [];
+  if(!DB.partyTransactions) DB.partyTransactions = [];
+  if(!DB.messages) DB.messages = [];
+  if(!DB.meta) DB.meta = { lastSyncAt:null };
+}
 function loadDb(){
   const raw = localStorage.getItem(DB_KEY);
   if(raw){
@@ -953,14 +1044,7 @@ function loadDb(){
   } else {
     DB = defaultDb();
   }
-  if(!DB.incomeCategories) DB.incomeCategories = { byBranch:{}, default: DEFAULT_INCOME_CATEGORIES.slice() };
-  if(!DB.expenseCategories) DB.expenseCategories = { byBranch:{}, default: DEFAULT_EXPENSE_CATEGORIES.slice() };
-  if(!DB.companySettings) DB.companySettings = { byBranch:{} };
-  if(!DB.voucherCounters) DB.voucherCounters = { byBranch:{} };
-  if(!DB.parties) DB.parties = [];
-  if(!DB.partyTransactions) DB.partyTransactions = [];
-  if(!DB.messages) DB.messages = [];
-  if(!DB.meta) DB.meta = { lastSyncAt:null };
+  normalizeDb();
   saveDbLocalOnly();
 }
 function saveDbLocalOnly(){
@@ -1115,7 +1199,7 @@ function queueSync(){
   if(!sheetsConfigured()){ setSyncStatus('', 'Not connected'); return; }
   clearTimeout(syncTimer);
   setSyncStatus('syncing','Pending sync…');
-  syncTimer = setTimeout(doSync, 1500);
+  syncTimer = setTimeout(doSync, 700);
 }
 function doSync(){
   if(!sheetsConfigured()) return;
@@ -1147,6 +1231,7 @@ function pullFromSheets(silent){
     delete window[cbName];
     if(resp && resp.data){
       DB = resp.data;
+      normalizeDb();
       saveDbLocalOnly();
       if(!silent) toast('Pulled latest data from Google Sheets.', 'success');
       setSyncStatus('ok', silent ? 'Updated just now' : 'Synced just now');
@@ -1164,21 +1249,40 @@ function pullFromSheets(silent){
 }
 
 /* ---------------- LIVE UPDATES ACROSS BROWSERS ----------------
-   Apps Script can't push to the browser, so "real-time" here means a cheap
-   poll: every few seconds we ask the server for just its current version
-   stamp (one tiny cell read, not the whole dataset). Only when that stamp
-   differs from what we last saw do we pull the full dataset. We skip a
-   cycle entirely while a modal is open or a sync is mid-flight, so nobody
-   gets their form yanked out from under them while typing. */
+   Apps Script can't push to the browser, so "real-time" here means a cheap,
+   frequent poll: every few seconds we ask the server for just its current
+   version stamp (one tiny cell read, not the whole dataset). Only when that
+   stamp differs from what we last saw do we pull the full dataset. We also
+   re-check the instant the tab/window regains focus, since browsers throttle
+   setInterval in background tabs — without that, switching back to a tab
+   could show stale data for up to a minute even with a short interval.
+   We skip a cycle entirely while a modal is open or the user is actively
+   typing in a field, so nobody gets their work yanked out from under them. */
 let remotePollTimer = null;
+let remotePollListenersAttached = false;
+const REMOTE_POLL_INTERVAL_MS = 3000;
 function startRemotePolling(){
   clearInterval(remotePollTimer);
   if(!sheetsConfigured()) return;
-  remotePollTimer = setInterval(checkRemoteVersion, 7000);
+  checkRemoteVersion(); // don't wait for the first tick
+  remotePollTimer = setInterval(checkRemoteVersion, REMOTE_POLL_INTERVAL_MS);
+  if(!remotePollListenersAttached){
+    document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') checkRemoteVersion(); });
+    window.addEventListener('focus', checkRemoteVersion);
+    remotePollListenersAttached = true;
+  }
+}
+function userIsTypingOutsideModal(){
+  const ae = document.activeElement;
+  if(!ae) return false;
+  if(!['INPUT','TEXTAREA','SELECT'].includes(ae.tagName)) return false;
+  const modal = document.getElementById('modalOverlay');
+  return !(modal && modal.classList.contains('active') && modal.contains(ae)) ? true : false;
 }
 function checkRemoteVersion(){
   if(!sheetsConfigured() || syncInFlight) return;
   if(document.getElementById('modalOverlay')?.classList.contains('active')) return;
+  if(userIsTypingOutsideModal()) return; // try again next tick rather than disturb an in-progress edit
   const cbName = 'khataVer_'+Date.now();
   window[cbName] = function(resp){
     delete window[cbName];
@@ -1219,12 +1323,48 @@ const App = {
   init(){
     loadDb();
     loadSession();
+    document.getElementById('loginForm').addEventListener('submit', (e)=>{ e.preventDefault(); this.login(); });
+    if(sheetsConfigured()){
+      document.getElementById('bootOverlay').style.display = 'flex';
+      this.bootPull(() => this.decideInitialScreen());
+    } else {
+      this.decideInitialScreen();
+    }
+  },
+
+  /** Pulls the server's dataset before the app ever shows login/app, so a browser that has
+   *  never synced before discovers the REAL accounts/branches instead of logging in against
+   *  a freshly-invented local default that the server doesn't know about. If the server has
+   *  no users yet (brand new spreadsheet) we keep the local defaults as-is, since that means
+   *  this is the very first setup and there is nothing authoritative to adopt yet. Network
+   *  failures fall back to local data too, so the app still works offline. */
+  bootPull(done){
+    const cbName = 'khataBoot_'+Date.now();
+    const finish = () => { document.getElementById('bootOverlay').style.display = 'none'; done(); };
+    let settled = false;
+    const safeFinish = () => { if(settled) return; settled = true; finish(); };
+    window[cbName] = function(resp){
+      delete window[cbName];
+      if(resp && resp.data && Array.isArray(resp.data.users) && resp.data.users.length > 0){
+        DB = resp.data;
+        normalizeDb();
+        saveDbLocalOnly();
+      }
+      safeFinish();
+    };
+    const script = document.createElement('script');
+    script.src = SHEETS_WEBAPP_URL + (SHEETS_WEBAPP_URL.includes('?')?'&':'?') + 'action=get&callback='+cbName;
+    script.onerror = function(){ delete window[cbName]; safeFinish(); };
+    document.body.appendChild(script);
+    setTimeout(()=>{ script.remove(); safeFinish(); }, 7000); // never block startup for long if Sheets is slow/unreachable
+  },
+
+  decideInitialScreen(){
     if(SESSION && DB.users.find(u=>u.id===SESSION.userId && u.active)){
       this.showApp();
     } else {
       this.showLogin();
     }
-    document.getElementById('loginForm').addEventListener('submit', (e)=>{ e.preventDefault(); this.login(); });
   },
 
   showLogin(){
@@ -1272,6 +1412,7 @@ const App = {
     this.navigate('dashboard');
     startChatPolling();
     startRemotePolling();
+    startSystemClock();
   },
 
   renderUserChip(){
@@ -1351,6 +1492,7 @@ const App = {
 
   render(){
     this.renderBranchIndicator();
+    renderSystemHeader();
     const titleMap = {
       dashboard:['Dashboard',"Overview of this branch's accounts"],
       income:['Income','Record and review income entries'],
