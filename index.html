@@ -870,7 +870,7 @@ select.filter-select, input.filter-input{
 
 /* ---------------- CONFIG ---------------- */
 // Paste your deployed Google Apps Script Web App URL here to enable sync.
-const SHEETS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbyOsEuwK-QMjK07cboTOYSQ13thKKJnnhFdR4EBGsSMZQHLaadxPD2oswQ-fhLNWVmz/exec";
+const SHEETS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwDyoAYw5PKR6xxgpuV_-ba_XaJKP3wN6roqCVYkLSz3J62JLBMvCLA2Cd5R_fUT1X1/exec";
 
 const DB_KEY = "khata_db_v1";
 const SESSION_KEY = "khata_session_v1";
@@ -1534,6 +1534,7 @@ const Views = {};
 /* ---------------- CALCULATION HELPERS ---------------- */
 function branchIncomes(branchId){ return DB.incomes.filter(i=>i.branchId===branchId); }
 function branchExpenses(branchId){ return DB.expenses.filter(e=>e.branchId===branchId); }
+function branchOpeningBalance(branchId){ const b = DB.branches.find(x=>x.id===branchId); return (b && b.openingBalance) || 0; }
 function sumAmt(list){ return list.reduce((s,x)=>s+Number(x.amount||0),0); }
 function bsMonthKey(dateStr){ const o=bsStringToObj(dateStr); return `${o.y}-${String(o.m).padStart(2,'0')}`; }
 function inRange(dateStr, from, to){
@@ -1562,7 +1563,8 @@ Views.dashboard = function(){
   const expTotal = sumAmt(expensesAll);
   const incMonth = sumAmt(incomesMonth);
   const expMonth = sumAmt(expensesMonth);
-  const netAll = incTotal - expTotal;
+  const opening = b.openingBalance || 0;
+  const netAll = opening + incTotal - expTotal;
   const netMonth = incMonth - expMonth;
 
   const recent = [...incomesAll.map(x=>({...x,kind:'income'})), ...expensesAll.map(x=>({...x,kind:'expense'}))]
@@ -1587,9 +1589,9 @@ Views.dashboard = function(){
       <div class="stat-foot">${netMonth>=0?'Profit':'Loss'} so far this month</div>
     </div>
     <div class="stat-card">
-      <div class="stat-label">All-time net</div>
+      <div class="stat-label">Current balance</div>
       <div class="stat-value num" style="color:${netAll>=0?'var(--sage)':'var(--brick)'};">${fmtRs(netAll)}</div>
-      <div class="stat-foot">Income ${fmtRs(incTotal)} · Expense ${fmtRs(expTotal)}</div>
+      <div class="stat-foot">Opening ${fmtRs(opening)} + Income ${fmtRs(incTotal)} − Expense ${fmtRs(expTotal)}</div>
     </div>
   </div>
 
@@ -2536,14 +2538,17 @@ Views.branches = function(){
   const rows = DB.branches.map(b=>{
     const inc = sumAmt(branchIncomes(b.id));
     const exp = sumAmt(branchExpenses(b.id));
+    const opening = b.openingBalance || 0;
+    const balance = opening + inc - exp;
     const userCount = DB.users.filter(u=>u.branchId===b.id).length;
     return `<tr>
       <td style="font-weight:600;">${escapeHtml(b.name)}</td>
       <td class="muted">${escapeHtml(b.location||'—')}</td>
       <td>${userCount}</td>
+      <td class="text-right num">${fmtRs(opening)}</td>
       <td class="text-right num amt-income">${fmtRs(inc)}</td>
       <td class="text-right num amt-expense">${fmtRs(exp)}</td>
-      <td class="text-right num" style="color:${inc-exp>=0?'var(--sage)':'var(--brick)'};font-weight:600;">${fmtRs(inc-exp)}</td>
+      <td class="text-right num" style="color:${balance>=0?'var(--sage)':'var(--brick)'};font-weight:600;">${fmtRs(balance)}</td>
       <td>
         <button class="btn btn-ghost btn-sm" onclick="App.switchBranch('${b.id}');App.navigate('dashboard')">View</button>
         <button class="btn btn-ghost btn-sm" onclick="openBranchForm('${b.id}')">${ICONS.edit}</button>
@@ -2559,7 +2564,7 @@ Views.branches = function(){
   <div class="card card-pad">
     ${DB.branches.length===0 ? emptyState('No branches yet','Create your first branch to get started.') : `
     <table>
-      <thead><tr><th>Branch</th><th>Location</th><th>Users</th><th class="text-right">Total income</th><th class="text-right">Total expenses</th><th class="text-right">Net</th><th></th></tr></thead>
+      <thead><tr><th>Branch</th><th>Location</th><th>Users</th><th class="text-right">Opening bal.</th><th class="text-right">Total income</th><th class="text-right">Total expenses</th><th class="text-right">Balance</th><th></th></tr></thead>
       <tbody>${rows}</tbody>
     </table>`}
   </div>
@@ -2579,6 +2584,11 @@ function openBranchForm(id){
         <label>Location (optional)</label>
         <input type="text" id="brForm_loc" value="${editing?escapeHtml(editing.location||''):''}" placeholder="e.g. Lakeside, Pokhara">
       </div>
+      <div class="field">
+        <label>Opening balance (Rs.)</label>
+        <input type="number" id="brForm_opening" value="${editing?(editing.openingBalance||0):0}" step="0.01" placeholder="0.00">
+        <p class="muted" style="font-size:11.5px;margin-top:5px;">Cash/bank balance this branch starts with, before any income or expense is recorded here. Leave as 0 if starting fresh. ${editing?'Adjusting this later changes the branch\'s current balance immediately.':''}</p>
+      </div>
     </div>
     <div class="modal-foot">
       <button class="btn btn-secondary" onclick="App.closeModal()">Cancel</button>
@@ -2589,12 +2599,13 @@ function openBranchForm(id){
 function saveBranch(id){
   const name = document.getElementById('brForm_name').value.trim();
   const location = document.getElementById('brForm_loc').value.trim();
+  const openingBalance = Number(document.getElementById('brForm_opening').value) || 0;
   if(!name){ toast('Branch name is required.', 'error'); return; }
   if(id){
     const b = DB.branches.find(x=>x.id===id);
-    b.name = name; b.location = location;
+    b.name = name; b.location = location; b.openingBalance = openingBalance;
   } else {
-    DB.branches.push({ id: uid('br'), name, location, createdAt: todayBsString() });
+    DB.branches.push({ id: uid('br'), name, location, openingBalance, createdAt: todayBsString() });
   }
   saveDb();
   App.closeModal();
