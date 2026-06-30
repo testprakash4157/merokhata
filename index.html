@@ -559,7 +559,20 @@ tbody tr:last-child td{border-bottom:1px solid var(--ink);}
   overflow-y:auto;
   box-shadow:var(--shadow-lg);
 }
-.modal.modal-wide{max-width:760px;}
+.entry-rows-table{width:100%;border-collapse:collapse;margin-top:4px;}
+.entry-rows-table th{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-soft);padding:0 6px 8px;text-align:left;border-bottom:2px solid var(--line);}
+.entry-rows-table th.amt-col{text-align:right;}
+.entry-rows-table td{padding:5px 4px;vertical-align:middle;}
+.entry-rows-table .ri{width:100%;padding:7px 8px;border:1px solid var(--line);border-radius:var(--radius);background:var(--paper);color:var(--ink);font-size:13px;font-family:inherit;}
+.entry-rows-table .ri:focus{outline:none;border-color:var(--brass);box-shadow:0 0 0 3px var(--brass-light);}
+.entry-rows-table .ri.amt{text-align:right;font-family:var(--font-mono);width:100px;}
+.entry-rows-table .ri.desc{min-width:130px;}
+.entry-rows-table .btn-row-del{background:none;border:none;cursor:pointer;color:var(--brick);padding:4px 6px;border-radius:var(--radius);line-height:1;font-size:16px;opacity:.7;}
+.entry-rows-table .btn-row-del:hover{opacity:1;background:var(--brick-light);}
+.entry-rows-footer{display:flex;align-items:center;justify-content:space-between;padding:10px 4px 2px;border-top:2px solid var(--line);margin-top:4px;}
+.entry-rows-total{font-family:var(--font-mono);font-weight:700;font-size:15px;}
+.modal.modal-xl{max-width:960px;}
+@media(max-width:880px){.modal.modal-xl{max-width:98vw;}}
 .modal-head{
   padding:18px 24px;
   border-bottom:1px solid var(--line);
@@ -1000,6 +1013,8 @@ function hashPass(pw){
 /* ---------------- DATA MODEL ---------------- */
 const DEFAULT_INCOME_CATEGORIES = ["Sales","Service Income","Commission","Rent Received","Interest Income","Donation","Other Income"];
 const DEFAULT_EXPENSE_CATEGORIES = ["Rent","Salary","Utilities","Transport","Supplies","Maintenance","Marketing","Tax","Bank Charges","Other Expense"];
+const DEFAULT_INCOME_HEADINGS = ["Operating Income","Other Income"];
+const DEFAULT_EXPENSE_HEADINGS = ["Operating Expenses","Administrative Expenses","Capital Expenditure","Other Expenses"];
 
 function defaultDb(){
   return {
@@ -1011,6 +1026,8 @@ function defaultDb(){
     ],
     incomeCategories: { byBranch:{} , default: DEFAULT_INCOME_CATEGORIES.slice() },
     expenseCategories: { byBranch:{}, default: DEFAULT_EXPENSE_CATEGORIES.slice() },
+    incomeHeadings: { byBranch:{}, default: DEFAULT_INCOME_HEADINGS.slice() },
+    expenseHeadings: { byBranch:{}, default: DEFAULT_EXPENSE_HEADINGS.slice() },
     incomes: [],
     expenses: [],
     companySettings: { byBranch:{} },
@@ -1026,6 +1043,8 @@ let DB = null;
 function normalizeDb(){
   if(!DB.incomeCategories) DB.incomeCategories = { byBranch:{}, default: DEFAULT_INCOME_CATEGORIES.slice() };
   if(!DB.expenseCategories) DB.expenseCategories = { byBranch:{}, default: DEFAULT_EXPENSE_CATEGORIES.slice() };
+  if(!DB.incomeHeadings) DB.incomeHeadings = { byBranch:{}, default: DEFAULT_INCOME_HEADINGS.slice() };
+  if(!DB.expenseHeadings) DB.expenseHeadings = { byBranch:{}, default: DEFAULT_EXPENSE_HEADINGS.slice() };
   if(!DB.companySettings) DB.companySettings = { byBranch:{} };
   if(!DB.voucherCounters) DB.voucherCounters = { byBranch:{} };
   if(!DB.branches) DB.branches = [];
@@ -1063,6 +1082,14 @@ function getIncomeCategories(branchId){
 function getExpenseCategories(branchId){
   return (DB.expenseCategories.byBranch[branchId] && DB.expenseCategories.byBranch[branchId].length)
     ? DB.expenseCategories.byBranch[branchId] : DB.expenseCategories.default;
+}
+function getIncomeHeadings(branchId){
+  return (DB.incomeHeadings.byBranch[branchId] && DB.incomeHeadings.byBranch[branchId].length)
+    ? DB.incomeHeadings.byBranch[branchId] : DB.incomeHeadings.default;
+}
+function getExpenseHeadings(branchId){
+  return (DB.expenseHeadings.byBranch[branchId] && DB.expenseHeadings.byBranch[branchId].length)
+    ? DB.expenseHeadings.byBranch[branchId] : DB.expenseHeadings.default;
 }
 
 /* ---------------- COMPANY SETTINGS HELPERS ---------------- */
@@ -1523,7 +1550,7 @@ const App = {
   },
   openModal(html, wide){
     const box = document.getElementById('modalBox');
-    box.className = 'modal'+(wide?' modal-wide':'');
+    box.className = 'modal'+(wide==='xl'?' modal-xl':wide?' modal-wide':'');
     box.innerHTML = html;
     document.getElementById('modalOverlay').classList.add('active');
   }
@@ -1640,6 +1667,7 @@ Views.income = function(){
   const b = activeBranch();
   if(!b) return emptyStateNoBranch();
   const list = branchIncomes(b.id).sort((a,c)=>c.date.localeCompare(a.date));
+  const heads = getIncomeHeadings(b.id);
   const cats = getIncomeCategories(b.id);
   return `
   <div class="toolbar">
@@ -1648,6 +1676,10 @@ Views.income = function(){
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
         <input type="text" id="incomeSearch" placeholder="Search description…" oninput="renderIncomeTable()">
       </div>
+      <select class="filter-select" id="incomeHeadingFilter" onchange="renderIncomeTable()">
+        <option value="">All headings</option>
+        ${heads.map(h=>`<option value="${escapeHtml(h)}">${escapeHtml(h)}</option>`).join('')}
+      </select>
       <select class="filter-select" id="incomeCategoryFilter" onchange="renderIncomeTable()">
         <option value="">All categories</option>
         ${cats.map(c=>`<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('')}
@@ -1655,6 +1687,7 @@ Views.income = function(){
       <input type="month" class="filter-input" id="incomeMonthFilter" onchange="renderIncomeTable()" title="Filter by AD month (approx)">
     </div>
     <div style="display:flex;gap:8px;">
+      <button class="btn btn-secondary btn-sm" onclick="openDaySummaryPicker()">${ICONS.print} Print day</button>
       <button class="btn btn-secondary btn-sm" onclick="printLedger('income')">${ICONS.print} Print</button>
       <button class="btn btn-sage btn-sm" onclick="openIncomeForm()">${ICONS.plus} Add income</button>
     </div>
@@ -1669,9 +1702,11 @@ function currentIncomeFiltered(){
   const b = activeBranch();
   let list = branchIncomes(b.id);
   const q = (document.getElementById('incomeSearch')?.value||'').toLowerCase();
+  const heading = document.getElementById('incomeHeadingFilter')?.value||'';
   const cat = document.getElementById('incomeCategoryFilter')?.value||'';
   const month = document.getElementById('incomeMonthFilter')?.value||'';
   if(q) list = list.filter(i=> (i.description||'').toLowerCase().includes(q));
+  if(heading) list = list.filter(i=> i.heading===heading);
   if(cat) list = list.filter(i=> i.category===cat);
   if(month){
     list = list.filter(i=>{
@@ -1690,12 +1725,13 @@ function renderIncomeTable(){
   const total = sumAmt(list);
   wrap.innerHTML = list.length===0 ? emptyState('No income recorded','Try adjusting your filters or add a new income entry.') : `
     <table>
-      <thead><tr><th>Voucher No.</th><th>Date (BS)</th><th>Category</th><th>Description</th><th>Received via</th><th class="text-right">Amount</th><th></th></tr></thead>
+      <thead><tr><th>Voucher No.</th><th>Date (BS)</th><th>Heading</th><th>Category</th><th>Description</th><th>Received via</th><th class="text-right">Amount</th><th></th></tr></thead>
       <tbody>
         ${list.map(i=>`
           <tr>
             <td class="num muted">${escapeHtml(i.voucherNo||'—')}</td>
             <td>${bsLabelFromString(i.date)}</td>
+            <td class="muted">${escapeHtml(i.heading||'—')}</td>
             <td><span class="badge badge-sage">${escapeHtml(i.category)}</span></td>
             <td>${escapeHtml(i.description||'—')}</td>
             <td class="muted">${escapeHtml(i.method||'—')}</td>
@@ -1708,90 +1744,198 @@ function renderIncomeTable(){
           </tr>`).join('')}
       </tbody>
       <tfoot>
-        <tr><td colspan="5" style="font-weight:700;">Total</td><td class="text-right num amt-income" style="font-weight:700;">${fmtRs(total)}</td><td></td></tr>
+        <tr><td colspan="6" style="font-weight:700;">Total</td><td class="text-right num amt-income" style="font-weight:700;">${fmtRs(total)}</td><td></td></tr>
       </tfoot>
     </table>`;
 }
 
-function openIncomeForm(id){
+/* ── MULTI-ROW DAILY INCOME ENTRY ─────────────────────────────────────── */
+function openIncomeForm(editId){
+  if(editId) return _openIncomeSingleEdit(editId);
   const b = activeBranch();
-  const editing = id ? DB.incomes.find(x=>x.id===id) : null;
-  const cats = getIncomeCategories(b.id);
+  const heads = getIncomeHeadings(b.id);
+  const cats  = getIncomeCategories(b.id);
+  function headOpts(sel){ return heads.map(h=>`<option value="${escapeHtml(h)}" ${sel===h?'selected':''}>${escapeHtml(h)}</option>`).join(''); }
+  function catOpts(sel){  return cats.map(c=>`<option value="${escapeHtml(c)}" ${sel===c?'selected':''}>${escapeHtml(c)}</option>`).join(''); }
+  function methOpts(sel){ return ["Cash","Bank","Mobile Wallet","Cheque","Other"].map(m=>`<option ${sel===m?'selected':''}>${m}</option>`).join(''); }
+  function rowHtml(i,h,c,m){
+    return `<tr id="incRow_${i}">
+      <td><select class="ri" onchange="incRecalcTotal()">${headOpts(h)}</select></td>
+      <td><select class="ri" onchange="incRecalcTotal()">${catOpts(c)}</select></td>
+      <td><input type="number" class="ri amt" min="0" step="0.01" placeholder="0.00" oninput="incRecalcTotal()"></td>
+      <td><input type="text" class="ri desc" placeholder="Description (optional)"></td>
+      <td><select class="ri">${methOpts(m)}</select></td>
+      <td><button type="button" class="btn-row-del" onclick="incRemoveRow(${i})" title="Remove row">×</button></td>
+    </tr>`;
+  }
+  window._incRowIdx = 3;
+  window.incAddRow = function(){
+    const tbody = document.getElementById('incTbody');
+    const i = ++window._incRowIdx;
+    const tr = document.createElement('tr'); tr.id='incRow_'+i; tr.innerHTML=rowHtml(i,'','','').replace(/^<tr[^>]*>/,'').replace(/<\/tr>$/,'');
+    tbody.appendChild(tr); incRecalcTotal();
+  };
+  window.incRemoveRow = function(i){
+    const rows = document.querySelectorAll('#incTbody tr'); if(rows.length<=1) return;
+    document.getElementById('incRow_'+i)?.remove(); incRecalcTotal();
+  };
+  window.incRecalcTotal = function(){
+    let t=0;
+    document.querySelectorAll('#incTbody .amt').forEach(el=>{ t+=parseFloat(el.value)||0; });
+    const el=document.getElementById('incRowsTotal'); if(el) el.textContent=fmtRs(t);
+    const cls=t>=0?'var(--sage)':'var(--brick)';
+    if(el) el.style.color=cls;
+  };
   App.openModal(`
-    <div class="modal-head"><h3>${editing?'Edit income':'Add income'}</h3><button class="modal-close" onclick="App.closeModal()">&times;</button></div>
+    <div class="modal-head">
+      <h3>${ICONS.income} Add income entries</h3>
+      <button class="modal-close" onclick="App.closeModal()">&times;</button>
+    </div>
     <div class="modal-body">
-      <div class="form-grid">
-        <div class="field full" style="background:var(--line-soft);padding:8px 12px;border-radius:var(--radius);margin-bottom:4px;">
-          <label style="margin-bottom:2px;">Voucher No.</label>
-          <div class="num" style="font-weight:600;color:var(--ink-soft);">${editing ? escapeHtml(editing.voucherNo||'—') : 'Auto-assigned on save (INV-'+todayBs().y+'-XXX)'}</div>
-        </div>
-        <div class="field full">
-          <label>Date (BS)</label>
-          ${bsDatePicker('incForm_date', editing?editing.date:todayBsString())}
-        </div>
+      <div class="form-grid" style="margin-bottom:16px;">
         <div class="field">
-          <label>Category</label>
-          <select id="incForm_category">
-            ${cats.map(c=>`<option value="${escapeHtml(c)}" ${editing&&editing.category===c?'selected':''}>${escapeHtml(c)}</option>`).join('')}
-          </select>
+          <label>Date (BS) — applies to all rows</label>
+          ${bsDatePicker('incBulkDate', todayBsString())}
         </div>
-        <div class="field">
-          <label>Amount (Rs.)</label>
-          <input type="number" id="incForm_amount" step="0.01" min="0" value="${editing?editing.amount:''}" placeholder="0.00">
+        <div class="field" style="align-self:end;padding-bottom:1px;">
+          <label>&nbsp;</label>
+          <p class="muted" style="font-size:12px;padding-top:4px;">Add one row per income item. All rows share the same date and will each get their own voucher number.</p>
         </div>
-        <div class="field full">
-          <label>Description</label>
-          <input type="text" id="incForm_desc" value="${editing?escapeHtml(editing.description||''):''}" placeholder="e.g. Tuition fee - June">
-        </div>
-        <div class="field">
-          <label>Received via</label>
-          <select id="incForm_method">
-            ${["Cash","Bank","Mobile Wallet","Cheque","Other"].map(m=>`<option ${editing&&editing.method===m?'selected':''}>${m}</option>`).join('')}
-          </select>
-        </div>
-        <div class="field">
-          <label>Reference / Receipt No.</label>
-          <input type="text" id="incForm_ref" value="${editing?escapeHtml(editing.ref||''):''}" placeholder="Optional">
+      </div>
+      <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
+        <table class="entry-rows-table">
+          <thead><tr>
+            <th style="min-width:150px;">Heading</th>
+            <th style="min-width:130px;">Category</th>
+            <th class="amt-col" style="min-width:100px;">Amount (Rs.)</th>
+            <th style="min-width:150px;">Description</th>
+            <th style="min-width:110px;">Received via</th>
+            <th style="width:32px;"></th>
+          </tr></thead>
+          <tbody id="incTbody">
+            ${rowHtml(0,heads[0]||'',cats[0]||'','Cash')}
+            ${rowHtml(1,heads[0]||'',cats[0]||'','Cash')}
+            ${rowHtml(2,heads[0]||'',cats[0]||'','Cash')}
+          </tbody>
+        </table>
+      </div>
+      <div class="entry-rows-footer">
+        <button type="button" class="btn btn-sage btn-sm" onclick="incAddRow()">${ICONS.plus} Add row</button>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <span class="muted" style="font-size:12px;">Total</span>
+          <span class="entry-rows-total" id="incRowsTotal" style="color:var(--sage);">Rs. 0.00</span>
         </div>
       </div>
     </div>
     <div class="modal-foot">
-      ${editing?`<button class="btn btn-secondary" onclick="printVoucher('income','${editing.id}')">${ICONS.print} Print voucher</button>`:''}
       <button class="btn btn-secondary" onclick="App.closeModal()">Cancel</button>
-      <button class="btn btn-sage" onclick="saveIncome('${editing?editing.id:''}')">Save income</button>
+      <button class="btn btn-sage" onclick="saveIncomeRows()">Save all entries</button>
+    </div>
+  `, 'xl');
+  document.getElementById('incBulkDate') && wireBsDatePicker('incBulkDate');
+}
+
+/* single-record EDIT (accessed via the edit pencil on the table row) */
+function _openIncomeSingleEdit(id){
+  const b = activeBranch();
+  const rec = DB.incomes.find(x=>x.id===id);
+  const cats = getIncomeCategories(b.id);
+  const heads = getIncomeHeadings(b.id);
+  App.openModal(`
+    <div class="modal-head"><h3>Edit income</h3><button class="modal-close" onclick="App.closeModal()">&times;</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="field full" style="background:var(--line-soft);padding:8px 12px;border-radius:var(--radius);margin-bottom:4px;">
+          <label style="margin-bottom:2px;">Voucher No.</label>
+          <div class="num" style="font-weight:600;color:var(--ink-soft);">${escapeHtml(rec.voucherNo||'—')}</div>
+        </div>
+        <div class="field full"><label>Date (BS)</label>${bsDatePicker('incForm_date', rec.date)}</div>
+        <div class="field">
+          <label>Heading</label>
+          <select id="incForm_heading">${heads.map(h=>`<option value="${escapeHtml(h)}" ${rec.heading===h?'selected':''}>${escapeHtml(h)}</option>`).join('')}</select>
+        </div>
+        <div class="field">
+          <label>Category</label>
+          <select id="incForm_category">${cats.map(c=>`<option value="${escapeHtml(c)}" ${rec.category===c?'selected':''}>${escapeHtml(c)}</option>`).join('')}</select>
+        </div>
+        <div class="field">
+          <label>Amount (Rs.)</label>
+          <input type="number" id="incForm_amount" step="0.01" min="0" value="${rec.amount}" placeholder="0.00">
+        </div>
+        <div class="field full">
+          <label>Description</label>
+          <input type="text" id="incForm_desc" value="${escapeHtml(rec.description||'')}" placeholder="e.g. Tuition fee - June">
+        </div>
+        <div class="field">
+          <label>Received via</label>
+          <select id="incForm_method">${["Cash","Bank","Mobile Wallet","Cheque","Other"].map(m=>`<option ${rec.method===m?'selected':''}>${m}</option>`).join('')}</select>
+        </div>
+        <div class="field">
+          <label>Reference / Receipt No.</label>
+          <input type="text" id="incForm_ref" value="${escapeHtml(rec.ref||'')}" placeholder="Optional">
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="printVoucher('income','${rec.id}')">${ICONS.print} Print</button>
+      <button class="btn btn-secondary" onclick="App.closeModal()">Cancel</button>
+      <button class="btn btn-sage" onclick="saveIncome('${rec.id}')">Save</button>
     </div>
   `);
   wireBsDatePicker('incForm_date');
 }
 
-function saveIncome(id){
+function saveIncomeRows(){
   const b = activeBranch();
-  const date = readBsDate('incForm_date');
-  const category = document.getElementById('incForm_category').value;
-  const amount = parseFloat(document.getElementById('incForm_amount').value);
-  const description = document.getElementById('incForm_desc').value.trim();
-  const method = document.getElementById('incForm_method').value;
-  const ref = document.getElementById('incForm_ref').value.trim();
-  if(!date || !category || isNaN(amount) || amount<=0){
-    toast('Enter a valid date, category and amount.', 'error'); return;
-  }
-  if(id){
-    const rec = DB.incomes.find(x=>x.id===id);
-    Object.assign(rec, {date,category,amount,description,method,ref});
-  } else {
-    const voucherNo = nextVoucherNo(b.id, 'income');
-    DB.incomes.push({ id: uid('inc'), branchId:b.id, voucherNo, date, category, amount, description, method, ref, createdBy: currentUser().id, createdAt: new Date().toISOString() });
-  }
+  const date = readBsDate('incBulkDate');
+  if(!date){ toast('Select a valid date.','error'); return; }
+  const rows = document.querySelectorAll('#incTbody tr');
+  const entries = [];
+  let hasError = false;
+  rows.forEach(tr=>{
+    const sels = tr.querySelectorAll('select');
+    const inps = tr.querySelectorAll('input');
+    const heading  = sels[0]?.value||'';
+    const category = sels[1]?.value||'';
+    const amount   = parseFloat(inps[0]?.value)||0;
+    const desc     = inps[1]?.value.trim()||'';
+    const method   = sels[2]?.value||'Cash';
+    if(!amount) return; // skip blank rows silently
+    if(!heading||!category){ hasError=true; return; }
+    entries.push({heading,category,amount,desc,method});
+  });
+  if(hasError){ toast('Each row needs a heading, category and amount.','error'); return; }
+  if(!entries.length){ toast('Enter at least one amount.','error'); return; }
+  entries.forEach(e=>{
+    const voucherNo = nextVoucherNo(b.id,'income');
+    DB.incomes.push({id:uid('inc'),branchId:b.id,voucherNo,date,heading:e.heading,category:e.category,amount:e.amount,description:e.desc,method:e.method,ref:'',createdBy:currentUser().id,createdAt:new Date().toISOString()});
+  });
   saveDb();
   App.closeModal();
-  toast('Income saved.', 'success');
+  toast(`${entries.length} income entr${entries.length===1?'y':'ies'} saved.`,'success');
   App.render();
+}
+
+function saveIncome(id){
+  const b = activeBranch();
+  const date     = readBsDate('incForm_date');
+  const heading  = document.getElementById('incForm_heading').value;
+  const category = document.getElementById('incForm_category').value;
+  const amount   = parseFloat(document.getElementById('incForm_amount').value);
+  const description = document.getElementById('incForm_desc').value.trim();
+  const method   = document.getElementById('incForm_method').value;
+  const ref      = document.getElementById('incForm_ref').value.trim();
+  if(!date||!heading||!category||isNaN(amount)||amount<=0){ toast('Enter a valid date, heading, category and amount.','error'); return; }
+  const rec = DB.incomes.find(x=>x.id===id);
+  Object.assign(rec,{date,heading,category,amount,description,method,ref});
+  saveDb(); App.closeModal(); toast('Income updated.','success'); App.render();
 }
 
 /* ---------------- EXPENSE VIEW ---------------- */
 Views.expenses = function(){
   const b = activeBranch();
   if(!b) return emptyStateNoBranch();
+  const heads = getExpenseHeadings(b.id);
   const cats = getExpenseCategories(b.id);
   return `
   <div class="toolbar">
@@ -1800,6 +1944,10 @@ Views.expenses = function(){
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
         <input type="text" id="expenseSearch" placeholder="Search description…" oninput="renderExpenseTable()">
       </div>
+      <select class="filter-select" id="expenseHeadingFilter" onchange="renderExpenseTable()">
+        <option value="">All headings</option>
+        ${heads.map(h=>`<option value="${escapeHtml(h)}">${escapeHtml(h)}</option>`).join('')}
+      </select>
       <select class="filter-select" id="expenseCategoryFilter" onchange="renderExpenseTable()">
         <option value="">All categories</option>
         ${cats.map(c=>`<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('')}
@@ -1807,6 +1955,7 @@ Views.expenses = function(){
       <input type="month" class="filter-input" id="expenseMonthFilter" onchange="renderExpenseTable()" title="Filter by AD month (approx)">
     </div>
     <div style="display:flex;gap:8px;">
+      <button class="btn btn-secondary btn-sm" onclick="openDaySummaryPicker()">${ICONS.print} Print day</button>
       <button class="btn btn-secondary btn-sm" onclick="printLedger('expense')">${ICONS.print} Print</button>
       <button class="btn btn-danger btn-sm" onclick="openExpenseForm()">${ICONS.plus} Add expense</button>
     </div>
@@ -1821,9 +1970,11 @@ function currentExpenseFiltered(){
   const b = activeBranch();
   let list = branchExpenses(b.id);
   const q = (document.getElementById('expenseSearch')?.value||'').toLowerCase();
+  const heading = document.getElementById('expenseHeadingFilter')?.value||'';
   const cat = document.getElementById('expenseCategoryFilter')?.value||'';
   const month = document.getElementById('expenseMonthFilter')?.value||'';
   if(q) list = list.filter(i=> (i.description||'').toLowerCase().includes(q));
+  if(heading) list = list.filter(i=> i.heading===heading);
   if(cat) list = list.filter(i=> i.category===cat);
   if(month){
     list = list.filter(i=>{
@@ -1843,12 +1994,13 @@ function renderExpenseTable(){
   const total = sumAmt(list);
   wrap.innerHTML = list.length===0 ? emptyState('No expenses recorded','Try adjusting your filters or add a new expense entry.') : `
     <table>
-      <thead><tr><th>Voucher No.</th><th>Date (BS)</th><th>Category</th><th>Description</th><th>Paid via</th><th class="text-right">Amount</th><th></th></tr></thead>
+      <thead><tr><th>Voucher No.</th><th>Date (BS)</th><th>Heading</th><th>Category</th><th>Description</th><th>Paid via</th><th class="text-right">Amount</th><th></th></tr></thead>
       <tbody>
         ${list.map(i=>`
           <tr>
             <td class="num muted">${escapeHtml(i.voucherNo||'—')}</td>
             <td>${bsLabelFromString(i.date)}</td>
+            <td class="muted">${escapeHtml(i.heading||'—')}</td>
             <td><span class="badge badge-brick">${escapeHtml(i.category)}</span></td>
             <td>${escapeHtml(i.description||'—')}</td>
             <td class="muted">${escapeHtml(i.method||'—')}</td>
@@ -1861,84 +2013,188 @@ function renderExpenseTable(){
           </tr>`).join('')}
       </tbody>
       <tfoot>
-        <tr><td colspan="5" style="font-weight:700;">Total</td><td class="text-right num amt-expense" style="font-weight:700;">${fmtRs(total)}</td><td></td></tr>
+        <tr><td colspan="6" style="font-weight:700;">Total</td><td class="text-right num amt-expense" style="font-weight:700;">${fmtRs(total)}</td><td></td></tr>
       </tfoot>
     </table>`;
 }
 
-function openExpenseForm(id){
+/* ── MULTI-ROW DAILY EXPENSE ENTRY ────────────────────────────────────── */
+function openExpenseForm(editId){
+  if(editId) return _openExpenseSingleEdit(editId);
   const b = activeBranch();
-  const editing = id ? DB.expenses.find(x=>x.id===id) : null;
-  const cats = getExpenseCategories(b.id);
+  const heads = getExpenseHeadings(b.id);
+  const cats  = getExpenseCategories(b.id);
+  function headOpts(sel){ return heads.map(h=>`<option value="${escapeHtml(h)}" ${sel===h?'selected':''}>${escapeHtml(h)}</option>`).join(''); }
+  function catOpts(sel){  return cats.map(c=>`<option value="${escapeHtml(c)}" ${sel===c?'selected':''}>${escapeHtml(c)}</option>`).join(''); }
+  function methOpts(sel){ return ["Cash","Bank","Mobile Wallet","Cheque","Other"].map(m=>`<option ${sel===m?'selected':''}>${m}</option>`).join(''); }
+  function rowHtml(i,h,c,m){
+    return `<tr id="expRow_${i}">
+      <td><select class="ri" onchange="expRecalcTotal()">${headOpts(h)}</select></td>
+      <td><select class="ri" onchange="expRecalcTotal()">${catOpts(c)}</select></td>
+      <td><input type="number" class="ri amt" min="0" step="0.01" placeholder="0.00" oninput="expRecalcTotal()"></td>
+      <td><input type="text" class="ri desc" placeholder="Description (optional)"></td>
+      <td><select class="ri">${methOpts(m)}</select></td>
+      <td><button type="button" class="btn-row-del" onclick="expRemoveRow(${i})" title="Remove row">×</button></td>
+    </tr>`;
+  }
+  window._expRowIdx = 3;
+  window.expAddRow = function(){
+    const tbody = document.getElementById('expTbody');
+    const i = ++window._expRowIdx;
+    const tr = document.createElement('tr'); tr.id='expRow_'+i; tr.innerHTML=rowHtml(i,'','','').replace(/^<tr[^>]*>/,'').replace(/<\/tr>$/,'');
+    tbody.appendChild(tr); expRecalcTotal();
+  };
+  window.expRemoveRow = function(i){
+    const rows = document.querySelectorAll('#expTbody tr'); if(rows.length<=1) return;
+    document.getElementById('expRow_'+i)?.remove(); expRecalcTotal();
+  };
+  window.expRecalcTotal = function(){
+    let t=0;
+    document.querySelectorAll('#expTbody .amt').forEach(el=>{ t+=parseFloat(el.value)||0; });
+    const el=document.getElementById('expRowsTotal'); if(el) el.textContent=fmtRs(t);
+  };
   App.openModal(`
-    <div class="modal-head"><h3>${editing?'Edit expense':'Add expense'}</h3><button class="modal-close" onclick="App.closeModal()">&times;</button></div>
+    <div class="modal-head">
+      <h3>${ICONS.expense} Add expense entries</h3>
+      <button class="modal-close" onclick="App.closeModal()">&times;</button>
+    </div>
     <div class="modal-body">
-      <div class="form-grid">
-        <div class="field full" style="background:var(--line-soft);padding:8px 12px;border-radius:var(--radius);margin-bottom:4px;">
-          <label style="margin-bottom:2px;">Voucher No.</label>
-          <div class="num" style="font-weight:600;color:var(--ink-soft);">${editing ? escapeHtml(editing.voucherNo||'—') : 'Auto-assigned on save (EXP-'+todayBs().y+'-XXX)'}</div>
-        </div>
-        <div class="field full">
-          <label>Date (BS)</label>
-          ${bsDatePicker('expForm_date', editing?editing.date:todayBsString())}
-        </div>
+      <div class="form-grid" style="margin-bottom:16px;">
         <div class="field">
-          <label>Category</label>
-          <select id="expForm_category">
-            ${cats.map(c=>`<option value="${escapeHtml(c)}" ${editing&&editing.category===c?'selected':''}>${escapeHtml(c)}</option>`).join('')}
-          </select>
+          <label>Date (BS) — applies to all rows</label>
+          ${bsDatePicker('expBulkDate', todayBsString())}
         </div>
-        <div class="field">
-          <label>Amount (Rs.)</label>
-          <input type="number" id="expForm_amount" step="0.01" min="0" value="${editing?editing.amount:''}" placeholder="0.00">
+        <div class="field" style="align-self:end;padding-bottom:1px;">
+          <label>&nbsp;</label>
+          <p class="muted" style="font-size:12px;padding-top:4px;">Add one row per expense item. All rows share the same date and will each get their own voucher number.</p>
         </div>
-        <div class="field full">
-          <label>Description</label>
-          <input type="text" id="expForm_desc" value="${editing?escapeHtml(editing.description||''):''}" placeholder="e.g. Electricity bill - June">
-        </div>
-        <div class="field">
-          <label>Paid via</label>
-          <select id="expForm_method">
-            ${["Cash","Bank","Mobile Wallet","Cheque","Other"].map(m=>`<option ${editing&&editing.method===m?'selected':''}>${m}</option>`).join('')}
-          </select>
-        </div>
-        <div class="field">
-          <label>Reference / Voucher No.</label>
-          <input type="text" id="expForm_ref" value="${editing?escapeHtml(editing.ref||''):''}" placeholder="Optional">
+      </div>
+      <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
+        <table class="entry-rows-table">
+          <thead><tr>
+            <th style="min-width:150px;">Heading</th>
+            <th style="min-width:130px;">Category</th>
+            <th class="amt-col" style="min-width:100px;">Amount (Rs.)</th>
+            <th style="min-width:150px;">Description</th>
+            <th style="min-width:110px;">Paid via</th>
+            <th style="width:32px;"></th>
+          </tr></thead>
+          <tbody id="expTbody">
+            ${rowHtml(0,heads[0]||'',cats[0]||'','Cash')}
+            ${rowHtml(1,heads[0]||'',cats[0]||'','Cash')}
+            ${rowHtml(2,heads[0]||'',cats[0]||'','Cash')}
+          </tbody>
+        </table>
+      </div>
+      <div class="entry-rows-footer">
+        <button type="button" class="btn btn-danger btn-sm" onclick="expAddRow()">${ICONS.plus} Add row</button>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <span class="muted" style="font-size:12px;">Total</span>
+          <span class="entry-rows-total" id="expRowsTotal" style="color:var(--brick);">Rs. 0.00</span>
         </div>
       </div>
     </div>
     <div class="modal-foot">
-      ${editing?`<button class="btn btn-secondary" onclick="printVoucher('expense','${editing.id}')">${ICONS.print} Print voucher</button>`:''}
       <button class="btn btn-secondary" onclick="App.closeModal()">Cancel</button>
-      <button class="btn btn-danger" onclick="saveExpense('${editing?editing.id:''}')">Save expense</button>
+      <button class="btn btn-danger" onclick="saveExpenseRows()">Save all entries</button>
+    </div>
+  `, 'xl');
+  wireBsDatePicker('expBulkDate');
+}
+
+function _openExpenseSingleEdit(id){
+  const b = activeBranch();
+  const rec = DB.expenses.find(x=>x.id===id);
+  const cats = getExpenseCategories(b.id);
+  const heads = getExpenseHeadings(b.id);
+  App.openModal(`
+    <div class="modal-head"><h3>Edit expense</h3><button class="modal-close" onclick="App.closeModal()">&times;</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="field full" style="background:var(--line-soft);padding:8px 12px;border-radius:var(--radius);margin-bottom:4px;">
+          <label style="margin-bottom:2px;">Voucher No.</label>
+          <div class="num" style="font-weight:600;color:var(--ink-soft);">${escapeHtml(rec.voucherNo||'—')}</div>
+        </div>
+        <div class="field full"><label>Date (BS)</label>${bsDatePicker('expForm_date', rec.date)}</div>
+        <div class="field">
+          <label>Heading</label>
+          <select id="expForm_heading">${heads.map(h=>`<option value="${escapeHtml(h)}" ${rec.heading===h?'selected':''}>${escapeHtml(h)}</option>`).join('')}</select>
+        </div>
+        <div class="field">
+          <label>Category</label>
+          <select id="expForm_category">${cats.map(c=>`<option value="${escapeHtml(c)}" ${rec.category===c?'selected':''}>${escapeHtml(c)}</option>`).join('')}</select>
+        </div>
+        <div class="field">
+          <label>Amount (Rs.)</label>
+          <input type="number" id="expForm_amount" step="0.01" min="0" value="${rec.amount}" placeholder="0.00">
+        </div>
+        <div class="field full">
+          <label>Description</label>
+          <input type="text" id="expForm_desc" value="${escapeHtml(rec.description||'')}" placeholder="e.g. Electricity bill - June">
+        </div>
+        <div class="field">
+          <label>Paid via</label>
+          <select id="expForm_method">${["Cash","Bank","Mobile Wallet","Cheque","Other"].map(m=>`<option ${rec.method===m?'selected':''}>${m}</option>`).join('')}</select>
+        </div>
+        <div class="field">
+          <label>Reference / Voucher No.</label>
+          <input type="text" id="expForm_ref" value="${escapeHtml(rec.ref||'')}" placeholder="Optional">
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="printVoucher('expense','${rec.id}')">${ICONS.print} Print</button>
+      <button class="btn btn-secondary" onclick="App.closeModal()">Cancel</button>
+      <button class="btn btn-danger" onclick="saveExpense('${rec.id}')">Save</button>
     </div>
   `);
   wireBsDatePicker('expForm_date');
 }
 
-function saveExpense(id){
+function saveExpenseRows(){
   const b = activeBranch();
-  const date = readBsDate('expForm_date');
-  const category = document.getElementById('expForm_category').value;
-  const amount = parseFloat(document.getElementById('expForm_amount').value);
-  const description = document.getElementById('expForm_desc').value.trim();
-  const method = document.getElementById('expForm_method').value;
-  const ref = document.getElementById('expForm_ref').value.trim();
-  if(!date || !category || isNaN(amount) || amount<=0){
-    toast('Enter a valid date, category and amount.', 'error'); return;
-  }
-  if(id){
-    const rec = DB.expenses.find(x=>x.id===id);
-    Object.assign(rec, {date,category,amount,description,method,ref});
-  } else {
-    const voucherNo = nextVoucherNo(b.id, 'expense');
-    DB.expenses.push({ id: uid('exp'), branchId:b.id, voucherNo, date, category, amount, description, method, ref, createdBy: currentUser().id, createdAt: new Date().toISOString() });
-  }
+  const date = readBsDate('expBulkDate');
+  if(!date){ toast('Select a valid date.','error'); return; }
+  const rows = document.querySelectorAll('#expTbody tr');
+  const entries = [];
+  let hasError = false;
+  rows.forEach(tr=>{
+    const sels = tr.querySelectorAll('select');
+    const inps = tr.querySelectorAll('input');
+    const heading  = sels[0]?.value||'';
+    const category = sels[1]?.value||'';
+    const amount   = parseFloat(inps[0]?.value)||0;
+    const desc     = inps[1]?.value.trim()||'';
+    const method   = sels[2]?.value||'Cash';
+    if(!amount) return;
+    if(!heading||!category){ hasError=true; return; }
+    entries.push({heading,category,amount,desc,method});
+  });
+  if(hasError){ toast('Each row needs a heading, category and amount.','error'); return; }
+  if(!entries.length){ toast('Enter at least one amount.','error'); return; }
+  entries.forEach(e=>{
+    const voucherNo = nextVoucherNo(b.id,'expense');
+    DB.expenses.push({id:uid('exp'),branchId:b.id,voucherNo,date,heading:e.heading,category:e.category,amount:e.amount,description:e.desc,method:e.method,ref:'',createdBy:currentUser().id,createdAt:new Date().toISOString()});
+  });
   saveDb();
   App.closeModal();
-  toast('Expense saved.', 'success');
+  toast(`${entries.length} expense entr${entries.length===1?'y':'ies'} saved.`,'success');
   App.render();
+}
+
+function saveExpense(id){
+  const b = activeBranch();
+  const date     = readBsDate('expForm_date');
+  const heading  = document.getElementById('expForm_heading').value;
+  const category = document.getElementById('expForm_category').value;
+  const amount   = parseFloat(document.getElementById('expForm_amount').value);
+  const description = document.getElementById('expForm_desc').value.trim();
+  const method   = document.getElementById('expForm_method').value;
+  const ref      = document.getElementById('expForm_ref').value.trim();
+  if(!date||!heading||!category||isNaN(amount)||amount<=0){ toast('Enter a valid date, heading, category and amount.','error'); return; }
+  const rec = DB.expenses.find(x=>x.id===id);
+  Object.assign(rec,{date,heading,category,amount,description,method,ref});
+  saveDb(); App.closeModal(); toast('Expense updated.','success'); App.render();
 }
 
 function deleteEntry(kind, id){
@@ -2362,6 +2618,7 @@ Views.reports = function(){
       <button class="btn btn-secondary" onclick="printLedger('income')">${ICONS.print} Income register</button>
       <button class="btn btn-secondary" onclick="printLedger('expense')">${ICONS.print} Expense register</button>
       <button class="btn btn-secondary" onclick="printLedger('both')">${ICONS.print} Combined daybook</button>
+      <button class="btn btn-secondary" onclick="openDaySummaryPicker()">${ICONS.print} Daily summary (1 day)</button>
       <button class="btn btn-secondary" onclick="App.navigate('pnl')">${ICONS.pnl} Profit &amp; Loss report</button>
     </div>
   </div>
@@ -2758,6 +3015,8 @@ function deleteUser(id){
 Views.settings = function(){
   const b = activeBranch();
   const me = currentUser();
+  const incHeads = b ? getIncomeHeadings(b.id) : [];
+  const expHeads = b ? getExpenseHeadings(b.id) : [];
   const incCats = b ? getIncomeCategories(b.id) : [];
   const expCats = b ? getExpenseCategories(b.id) : [];
   const company = b ? getCompanySettings(b.id) : { name:'', address:'', pan:'', logo:'' };
@@ -2772,6 +3031,21 @@ Views.settings = function(){
 
   <div id="settingsTab_cat">
     ${!b ? emptyState('No branch selected','Select or create a branch first.') : `
+    <p class="muted" style="margin-bottom:16px;">Heading is the broad classification (e.g. "Operating Income"); Category is the specific item under it (e.g. "Sales"). Both appear on the Income/Expense entry forms.</p>
+    <div class="grid-2col" style="margin-bottom:20px;">
+      <div class="card card-pad">
+        <div class="section-title">Income headings <button class="btn btn-sage btn-sm" onclick="addHeading('income')">${ICONS.plus} Add</button></div>
+        <div id="incHeadList">
+          ${incHeads.map(h=>headingRow('income',h)).join('')}
+        </div>
+      </div>
+      <div class="card card-pad">
+        <div class="section-title">Expense headings <button class="btn btn-danger btn-sm" onclick="addHeading('expense')">${ICONS.plus} Add</button></div>
+        <div id="expHeadList">
+          ${expHeads.map(h=>headingRow('expense',h)).join('')}
+        </div>
+      </div>
+    </div>
     <div class="grid-2col">
       <div class="card card-pad">
         <div class="section-title">Income categories <button class="btn btn-sage btn-sm" onclick="addCategory('income')">${ICONS.plus} Add</button></div>
@@ -2928,6 +3202,32 @@ function removeCategory(kind, name){
   saveDb();
   App.render();
 }
+
+function headingRow(kind, name){
+  return `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--line-soft);">
+    <span>${escapeHtml(name)}</span>
+    <button class="btn btn-ghost btn-sm" onclick="removeHeading('${kind}','${escapeHtml(name).replace(/'/g,"\\'")}')">${ICONS.trash}</button>
+  </div>`;
+}
+function addHeading(kind){
+  const b = activeBranch();
+  const name = prompt(`New ${kind} heading name:`);
+  if(!name || !name.trim()) return;
+  const store = kind==='income' ? DB.incomeHeadings : DB.expenseHeadings;
+  if(!store.byBranch[b.id]) store.byBranch[b.id] = (kind==='income'?getIncomeHeadings(b.id):getExpenseHeadings(b.id)).slice();
+  if(store.byBranch[b.id].includes(name.trim())){ toast('Heading already exists.', 'error'); return; }
+  store.byBranch[b.id].push(name.trim());
+  saveDb();
+  App.render();
+}
+function removeHeading(kind, name){
+  const b = activeBranch();
+  const store = kind==='income' ? DB.incomeHeadings : DB.expenseHeadings;
+  if(!store.byBranch[b.id]) store.byBranch[b.id] = (kind==='income'?getIncomeHeadings(b.id):getExpenseHeadings(b.id)).slice();
+  store.byBranch[b.id] = store.byBranch[b.id].filter(h=>h!==name);
+  saveDb();
+  App.render();
+}
 function changeMyPassword(){
   const me = currentUser();
   const cur = document.getElementById('pwForm_current').value;
@@ -2999,6 +3299,99 @@ function printShell(title, branchName, bodyHtml){
   win.document.close();
 }
 
+/* ---------------- DAILY SUMMARY (1 day, income + expense, single invoice-style page) ---------------- */
+function openDaySummaryPicker(){
+  const b = activeBranch();
+  if(!b){ toast('No branch selected.', 'error'); return; }
+  App.openModal(`
+    <div class="modal-head"><h3>${ICONS.print} Print daily summary</h3><button class="modal-close" onclick="App.closeModal()">&times;</button></div>
+    <div class="modal-body">
+      <div class="field full">
+        <label>Date (BS)</label>
+        ${bsDatePicker('daySummaryDate', todayBsString())}
+      </div>
+      <p class="muted" style="font-size:12px;margin-top:8px;">Prints every income and expense entry recorded on this date for ${escapeHtml(b.name)} as a single page, with totals and net for the day.</p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="App.closeModal()">Cancel</button>
+      <button class="btn btn-sage" onclick="printDaySummary(readBsDate('daySummaryDate'))">${ICONS.print} Print</button>
+    </div>
+  `);
+  wireBsDatePicker('daySummaryDate');
+}
+
+function daySummaryRowsTable(rows, accentColor, emptyLabel){
+  if(rows.length===0){
+    return `<p style="font-size:12px;color:#999;padding:6px 8px;">${emptyLabel}</p>`;
+  }
+  const total = sumAmt(rows);
+  return `<table>
+    <thead><tr><th>Voucher No.</th><th>Heading</th><th>Category</th><th>Description</th><th>Via</th><th class="right">Amount</th></tr></thead>
+    <tbody>
+      ${rows.map(r=>`<tr><td>${escapeHtml(r.voucherNo||'—')}</td><td>${escapeHtml(r.heading||'—')}</td><td>${escapeHtml(r.category)}</td><td>${escapeHtml(r.description||'—')}</td><td>${escapeHtml(r.method||'—')}</td><td class="right">${fmtRs(r.amount)}</td></tr>`).join('')}
+    </tbody>
+    <tfoot><tr><td colspan="5">Subtotal</td><td class="right" style="color:${accentColor};">${fmtRs(total)}</td></tr></tfoot>
+  </table>`;
+}
+
+function printDaySummary(date){
+  if(!date){ toast('Select a valid date.', 'error'); return; }
+  const b = activeBranch();
+  if(!b){ toast('No branch selected.', 'error'); return; }
+  const incomeRows = branchIncomes(b.id).filter(r=>r.date===date).sort((a,c)=>(a.voucherNo||'').localeCompare(c.voucherNo||''));
+  const expenseRows = branchExpenses(b.id).filter(r=>r.date===date).sort((a,c)=>(a.voucherNo||'').localeCompare(c.voucherNo||''));
+  const totalIncome = sumAmt(incomeRows);
+  const totalExpense = sumAmt(expenseRows);
+  const net = totalIncome - totalExpense;
+  const netColor = net>=0 ? '#4A7C59' : '#A8453A';
+
+  if(incomeRows.length===0 && expenseRows.length===0){
+    App.closeModal();
+    toast('No income or expense entries recorded on that date.', 'error');
+    return;
+  }
+
+  const body = `
+    <div style="border:1.5px solid #1B2A4A; border-radius:6px; padding:0; margin-top:6px;">
+      <div style="background:#1B2A4A; color:white; padding:10px 18px; display:flex; justify-content:space-between; align-items:center; border-radius:6px 6px 0 0;">
+        <div style="font-size:16px; font-weight:700; letter-spacing:0.02em;">DAILY TRANSACTION SUMMARY</div>
+        <div style="font-family:'Courier New',monospace; font-size:14px; font-weight:700;">${bsLabelFromString(date)}</div>
+      </div>
+      <div style="padding:20px 24px;">
+        <div style="font-size:12.5px; font-weight:700; color:#4A7C59; text-transform:uppercase; letter-spacing:0.03em; margin-bottom:4px;">Income</div>
+        ${daySummaryRowsTable(incomeRows, '#4A7C59', 'No income recorded on this date.')}
+
+        <div style="font-size:12.5px; font-weight:700; color:#A8453A; text-transform:uppercase; letter-spacing:0.03em; margin:18px 0 4px;">Expenses</div>
+        ${daySummaryRowsTable(expenseRows, '#A8453A', 'No expenses recorded on this date.')}
+
+        <div style="border-top:1.5px dashed #999; margin:18px 0 14px;"></div>
+        <table style="margin-bottom:6px;">
+          <tbody>
+            <tr><td style="width:160px; font-weight:700; border-bottom:none;">Total Income</td><td style="border-bottom:none; text-align:right; font-family:'Courier New',monospace; color:#4A7C59;">${fmtRs(totalIncome)}</td></tr>
+            <tr><td style="font-weight:700; border-bottom:none;">Total Expenses</td><td style="border-bottom:none; text-align:right; font-family:'Courier New',monospace; color:#A8453A;">${fmtRs(totalExpense)}</td></tr>
+          </tbody>
+        </table>
+        <div style="display:flex; justify-content:space-between; align-items:baseline; border-top:2px solid #1B2A4A; padding-top:10px; margin-top:4px;">
+          <span style="font-size:14px; font-weight:700;">Net for the day</span>
+          <span style="font-size:22px; font-weight:700; font-family:'Courier New',monospace; color:${netColor};">${fmtRs(net)}</span>
+        </div>
+        <div style="font-size:11.5px; font-style:italic; color:#555; margin-top:6px;">${amountInWords(Math.abs(net))} ${net<0?'(deficit)':''}</div>
+
+        <div style="display:flex; justify-content:space-between; margin-top:60px; padding-top:6px;">
+          <div style="text-align:center; width:45%;">
+            <div style="border-top:1px solid #1B2A4A; padding-top:6px; font-size:12px;">Prepared By</div>
+          </div>
+          <div style="text-align:center; width:45%;">
+            <div style="border-top:1px solid #1B2A4A; padding-top:6px; font-size:12px;">Approved By</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  App.closeModal();
+  printShell('Daily Transaction Summary', b.name, body);
+}
+
 function printLedger(kind){
   const b = activeBranch();
   if(!b){ toast('No branch selected.', 'error'); return; }
@@ -3018,12 +3411,12 @@ function printLedger(kind){
 function ledgerTable(rows, kind){
   const total = sumAmt(rows);
   return `<table>
-    <thead><tr><th>Voucher No.</th><th>Date (BS)</th><th>Category</th><th>Description</th><th>Ref</th><th class="right">Amount</th></tr></thead>
+    <thead><tr><th>Voucher No.</th><th>Date (BS)</th><th>Heading</th><th>Category</th><th>Description</th><th>Ref</th><th class="right">Amount</th></tr></thead>
     <tbody>
-      ${rows.length===0 ? `<tr><td colspan="6" style="text-align:center;color:#999;">No entries</td></tr>` :
-        rows.map(r=>`<tr><td>${escapeHtml(r.voucherNo||'—')}</td><td>${bsLabelFromString(r.date)}</td><td>${escapeHtml(r.category)}</td><td>${escapeHtml(r.description||'—')}</td><td>${escapeHtml(r.ref||'—')}</td><td class="right">${fmtRs(r.amount)}</td></tr>`).join('')}
+      ${rows.length===0 ? `<tr><td colspan="7" style="text-align:center;color:#999;">No entries</td></tr>` :
+        rows.map(r=>`<tr><td>${escapeHtml(r.voucherNo||'—')}</td><td>${bsLabelFromString(r.date)}</td><td>${escapeHtml(r.heading||'—')}</td><td>${escapeHtml(r.category)}</td><td>${escapeHtml(r.description||'—')}</td><td>${escapeHtml(r.ref||'—')}</td><td class="right">${fmtRs(r.amount)}</td></tr>`).join('')}
     </tbody>
-    <tfoot><tr><td colspan="5">Total</td><td class="right">${fmtRs(total)}</td></tr></tfoot>
+    <tfoot><tr><td colspan="6">Total</td><td class="right">${fmtRs(total)}</td></tr></tfoot>
   </table>`;
 }
 
@@ -3119,6 +3512,7 @@ function printVoucher(kind, id){
         <table style="margin-bottom:10px;">
           <tbody>
             <tr><td style="width:140px; font-weight:700; border-bottom:none;">Date (BS)</td><td style="border-bottom:none;">${bsLabelFromString(rec.date)}</td></tr>
+            ${rec.heading?`<tr><td style="font-weight:700; border-bottom:none;">Heading</td><td style="border-bottom:none;">${escapeHtml(rec.heading)}</td></tr>`:''}
             <tr><td style="font-weight:700; border-bottom:none;">Category</td><td style="border-bottom:none;">${escapeHtml(rec.category)}</td></tr>
             <tr><td style="font-weight:700; border-bottom:none;">${partyLabel} / Narration</td><td style="border-bottom:none;">${escapeHtml(rec.description||'—')}</td></tr>
             <tr><td style="font-weight:700; border-bottom:none;">${methodLabel}</td><td style="border-bottom:none;">${escapeHtml(rec.method||'—')}</td></tr>
