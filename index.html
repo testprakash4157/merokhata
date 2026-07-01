@@ -1749,19 +1749,73 @@ function renderIncomeTable(){
     </table>`;
 }
 
+/* ---------------- INLINE "ADD NEW" FOR HEADING/CATEGORY DROPDOWNS ----------------
+   Used on every Heading/Category <select> in the income & expense entry forms (both the
+   multi-row daily form and the single-record edit form). Selecting the trailing
+   "+ Add new…" option prompts for a name, saves it to the branch's heading/category list,
+   then refreshes every matching open dropdown in the current modal so newly added rows can
+   use it too — without closing the form or losing anything already typed. */
+const INLINE_ADD_VALUE = '__add_new__';
+function inlineOptionsHtml(kind, type, selected){
+  const b = activeBranch();
+  const list = (type==='heading')
+    ? (kind==='income' ? getIncomeHeadings(b.id) : getExpenseHeadings(b.id))
+    : (kind==='income' ? getIncomeCategories(b.id) : getExpenseCategories(b.id));
+  const addLabel = type==='heading' ? '+ Add new heading…' : '+ Add new category…';
+  return list.map(v=>`<option value="${escapeHtml(v)}" ${selected===v?'selected':''}>${escapeHtml(v)}</option>`).join('')
+    + `<option value="${INLINE_ADD_VALUE}">${addLabel}</option>`;
+}
+function handleInlineSelect(selectEl){
+  const kind = selectEl.dataset.kind, type = selectEl.dataset.type;
+  if(selectEl.value === INLINE_ADD_VALUE){
+    inlineAddOption(kind, type, selectEl);
+  } else {
+    selectEl.dataset.prev = selectEl.value;
+  }
+}
+function inlineAddOption(kind, type, selectEl){
+  const b = activeBranch();
+  const label = type==='heading' ? 'heading' : 'category';
+  const name = prompt(`New ${kind} ${label} name:`);
+  if(!name || !name.trim()){
+    selectEl.value = selectEl.dataset.prev || (selectEl.options[0] ? selectEl.options[0].value : '');
+    return;
+  }
+  const trimmed = name.trim();
+  const store = (kind==='income')
+    ? (type==='heading' ? DB.incomeHeadings : DB.incomeCategories)
+    : (type==='heading' ? DB.expenseHeadings : DB.expenseCategories);
+  const currentList = (type==='heading')
+    ? (kind==='income' ? getIncomeHeadings(b.id) : getExpenseHeadings(b.id))
+    : (kind==='income' ? getIncomeCategories(b.id) : getExpenseCategories(b.id));
+  if(!store.byBranch[b.id]) store.byBranch[b.id] = currentList.slice();
+  if(store.byBranch[b.id].includes(trimmed)){
+    toast(`"${trimmed}" already exists — selected it instead.`, 'error');
+  } else {
+    store.byBranch[b.id].push(trimmed);
+    saveDb();
+    toast(`${label.charAt(0).toUpperCase()+label.slice(1)} "${trimmed}" added.`, 'success');
+  }
+  document.querySelectorAll(`select[data-kind="${kind}"][data-type="${type}"]`).forEach(sel=>{
+    const keepValue = (sel===selectEl) ? trimmed : sel.value;
+    sel.innerHTML = inlineOptionsHtml(kind, type, keepValue);
+    sel.dataset.prev = keepValue;
+  });
+}
+
 /* ── MULTI-ROW DAILY INCOME ENTRY ─────────────────────────────────────── */
 function openIncomeForm(editId){
   if(editId) return _openIncomeSingleEdit(editId);
   const b = activeBranch();
   const heads = getIncomeHeadings(b.id);
   const cats  = getIncomeCategories(b.id);
-  function headOpts(sel){ return heads.map(h=>`<option value="${escapeHtml(h)}" ${sel===h?'selected':''}>${escapeHtml(h)}</option>`).join(''); }
-  function catOpts(sel){  return cats.map(c=>`<option value="${escapeHtml(c)}" ${sel===c?'selected':''}>${escapeHtml(c)}</option>`).join(''); }
+  function headOpts(sel){ return inlineOptionsHtml('income','heading',sel); }
+  function catOpts(sel){  return inlineOptionsHtml('income','category',sel); }
   function methOpts(sel){ return ["Cash","Bank","Mobile Wallet","Cheque","Other"].map(m=>`<option ${sel===m?'selected':''}>${m}</option>`).join(''); }
   function rowHtml(i,h,c,m){
     return `<tr id="incRow_${i}">
-      <td><select class="ri" onchange="incRecalcTotal()">${headOpts(h)}</select></td>
-      <td><select class="ri" onchange="incRecalcTotal()">${catOpts(c)}</select></td>
+      <td><select class="ri" data-kind="income" data-type="heading" data-prev="${escapeHtml(h)}" onchange="handleInlineSelect(this)">${headOpts(h)}</select></td>
+      <td><select class="ri" data-kind="income" data-type="category" data-prev="${escapeHtml(c)}" onchange="handleInlineSelect(this)">${catOpts(c)}</select></td>
       <td><input type="number" class="ri amt" min="0" step="0.01" placeholder="0.00" oninput="incRecalcTotal()"></td>
       <td><input type="text" class="ri desc" placeholder="Description (optional)"></td>
       <td><select class="ri">${methOpts(m)}</select></td>
@@ -1839,8 +1893,6 @@ function openIncomeForm(editId){
 function _openIncomeSingleEdit(id){
   const b = activeBranch();
   const rec = DB.incomes.find(x=>x.id===id);
-  const cats = getIncomeCategories(b.id);
-  const heads = getIncomeHeadings(b.id);
   App.openModal(`
     <div class="modal-head"><h3>Edit income</h3><button class="modal-close" onclick="App.closeModal()">&times;</button></div>
     <div class="modal-body">
@@ -1852,11 +1904,11 @@ function _openIncomeSingleEdit(id){
         <div class="field full"><label>Date (BS)</label>${bsDatePicker('incForm_date', rec.date)}</div>
         <div class="field">
           <label>Heading</label>
-          <select id="incForm_heading">${heads.map(h=>`<option value="${escapeHtml(h)}" ${rec.heading===h?'selected':''}>${escapeHtml(h)}</option>`).join('')}</select>
+          <select id="incForm_heading" data-kind="income" data-type="heading" data-prev="${escapeHtml(rec.heading||'')}" onchange="handleInlineSelect(this)">${inlineOptionsHtml('income','heading',rec.heading)}</select>
         </div>
         <div class="field">
           <label>Category</label>
-          <select id="incForm_category">${cats.map(c=>`<option value="${escapeHtml(c)}" ${rec.category===c?'selected':''}>${escapeHtml(c)}</option>`).join('')}</select>
+          <select id="incForm_category" data-kind="income" data-type="category" data-prev="${escapeHtml(rec.category||'')}" onchange="handleInlineSelect(this)">${inlineOptionsHtml('income','category',rec.category)}</select>
         </div>
         <div class="field">
           <label>Amount (Rs.)</label>
@@ -2024,13 +2076,13 @@ function openExpenseForm(editId){
   const b = activeBranch();
   const heads = getExpenseHeadings(b.id);
   const cats  = getExpenseCategories(b.id);
-  function headOpts(sel){ return heads.map(h=>`<option value="${escapeHtml(h)}" ${sel===h?'selected':''}>${escapeHtml(h)}</option>`).join(''); }
-  function catOpts(sel){  return cats.map(c=>`<option value="${escapeHtml(c)}" ${sel===c?'selected':''}>${escapeHtml(c)}</option>`).join(''); }
+  function headOpts(sel){ return inlineOptionsHtml('expense','heading',sel); }
+  function catOpts(sel){  return inlineOptionsHtml('expense','category',sel); }
   function methOpts(sel){ return ["Cash","Bank","Mobile Wallet","Cheque","Other"].map(m=>`<option ${sel===m?'selected':''}>${m}</option>`).join(''); }
   function rowHtml(i,h,c,m){
     return `<tr id="expRow_${i}">
-      <td><select class="ri" onchange="expRecalcTotal()">${headOpts(h)}</select></td>
-      <td><select class="ri" onchange="expRecalcTotal()">${catOpts(c)}</select></td>
+      <td><select class="ri" data-kind="expense" data-type="heading" data-prev="${escapeHtml(h)}" onchange="handleInlineSelect(this)">${headOpts(h)}</select></td>
+      <td><select class="ri" data-kind="expense" data-type="category" data-prev="${escapeHtml(c)}" onchange="handleInlineSelect(this)">${catOpts(c)}</select></td>
       <td><input type="number" class="ri amt" min="0" step="0.01" placeholder="0.00" oninput="expRecalcTotal()"></td>
       <td><input type="text" class="ri desc" placeholder="Description (optional)"></td>
       <td><select class="ri">${methOpts(m)}</select></td>
@@ -2105,8 +2157,6 @@ function openExpenseForm(editId){
 function _openExpenseSingleEdit(id){
   const b = activeBranch();
   const rec = DB.expenses.find(x=>x.id===id);
-  const cats = getExpenseCategories(b.id);
-  const heads = getExpenseHeadings(b.id);
   App.openModal(`
     <div class="modal-head"><h3>Edit expense</h3><button class="modal-close" onclick="App.closeModal()">&times;</button></div>
     <div class="modal-body">
@@ -2118,11 +2168,11 @@ function _openExpenseSingleEdit(id){
         <div class="field full"><label>Date (BS)</label>${bsDatePicker('expForm_date', rec.date)}</div>
         <div class="field">
           <label>Heading</label>
-          <select id="expForm_heading">${heads.map(h=>`<option value="${escapeHtml(h)}" ${rec.heading===h?'selected':''}>${escapeHtml(h)}</option>`).join('')}</select>
+          <select id="expForm_heading" data-kind="expense" data-type="heading" data-prev="${escapeHtml(rec.heading||'')}" onchange="handleInlineSelect(this)">${inlineOptionsHtml('expense','heading',rec.heading)}</select>
         </div>
         <div class="field">
           <label>Category</label>
-          <select id="expForm_category">${cats.map(c=>`<option value="${escapeHtml(c)}" ${rec.category===c?'selected':''}>${escapeHtml(c)}</option>`).join('')}</select>
+          <select id="expForm_category" data-kind="expense" data-type="category" data-prev="${escapeHtml(rec.category||'')}" onchange="handleInlineSelect(this)">${inlineOptionsHtml('expense','category',rec.category)}</select>
         </div>
         <div class="field">
           <label>Amount (Rs.)</label>
@@ -3498,49 +3548,88 @@ function printVoucher(kind, id){
   if(!rec){ toast('Entry not found.', 'error'); return; }
   const isIncome = kind==='income';
   const voucherLabel = isIncome ? 'Receipt Voucher' : 'Payment Voucher';
-  const partyLabel = isIncome ? 'Received From' : 'Paid To';
-  const methodLabel = isIncome ? 'Received Via' : 'Paid Via';
-  const accentColor = isIncome ? '#4A7C59' : '#A8453A';
+  const company = getCompanySettings(b.id);
+  const companyName = (company && company.name) ? company.name : b.name;
 
-  const body = `
-    <div style="border:1.5px solid #1B2A4A; border-radius:6px; padding:0; margin-top:6px;">
-      <div style="background:${accentColor}; color:white; padding:10px 18px; display:flex; justify-content:space-between; align-items:center; border-radius:6px 6px 0 0;">
-        <div style="font-size:16px; font-weight:700; letter-spacing:0.02em;">${voucherLabel.toUpperCase()}</div>
-        <div style="font-family:'Courier New',monospace; font-size:14px; font-weight:700;">${escapeHtml(rec.voucherNo||'—')}</div>
+  // Double-entry style: an income receipt debits the cash/bank account and credits the income
+  // head; a payment debits the expense head and credits the cash/bank account.
+  const methodAccount = `${escapeHtml(rec.method||'Cash')} Account`;
+  const headAccount = `${escapeHtml(rec.category)}${rec.heading?' ('+escapeHtml(rec.heading)+')':''}`;
+  const debitLabel = isIncome ? methodAccount : headAccount;
+  const creditLabel = isIncome ? headAccount : methodAccount;
+  const amountStr = fmtRs(rec.amount).replace('Rs. ','');
+  const narration = rec.description ? `Being ${escapeHtml(rec.description)}` : `Being ${escapeHtml(rec.category)} ${isIncome?'received':'paid'}`;
+
+  const win = window.open('', '_blank');
+  win.document.write(`
+  <!DOCTYPE html><html><head><meta charset="utf-8"><title>${escapeHtml(voucherLabel)} — ${escapeHtml(rec.voucherNo||'')}</title>
+  <style>
+    @page { size: A4; margin: 16mm; }
+    *{ box-sizing:border-box; }
+    body{ font-family:'Inter','Helvetica Neue',Arial,sans-serif; color:#111; margin:0; padding:0; }
+    .no-print{ text-align:right; padding:10px; background:#f0ede4; }
+    @media print { .no-print{ display:none; } }
+    .jv-wrap{ max-width:640px; margin:18px auto 0; }
+    .jv-box{ border:1.4px solid #111; }
+    .jv-row{ border-bottom:1.4px solid #111; display:flex; }
+    .jv-row:last-child{ border-bottom:none; }
+    .jv-center{ flex:1; text-align:center; padding:10px 12px; font-weight:700; }
+    .jv-co-name{ font-size:15px; letter-spacing:0.02em; }
+    .jv-title{ font-size:13.5px; letter-spacing:0.04em; }
+    .jv-split{ display:flex; }
+    .jv-split > div{ flex:1; padding:8px 14px; font-size:12.5px; }
+    .jv-split > div:first-child{ border-right:1.4px solid #111; }
+    .jv-split .jv-lbl{ color:#555; font-size:10.5px; text-transform:uppercase; letter-spacing:.04em; display:block; margin-bottom:2px; }
+    .jv-head{ background:#4A7C59; color:#fff; display:flex; font-weight:700; font-size:12px; text-transform:uppercase; letter-spacing:.03em; }
+    .jv-head > div:first-child{ flex:1; padding:8px 14px; }
+    .jv-head > div:last-child{ width:150px; padding:8px 14px; text-align:right; }
+    .jv-line{ display:flex; font-size:13px; }
+    .jv-line > div:first-child{ flex:1; padding:8px 14px; }
+    .jv-line > div:last-child{ width:150px; padding:8px 14px; text-align:right; font-family:'Courier New',monospace; }
+    .jv-total{ display:flex; font-size:13px; font-weight:700; border-top:1.4px solid #111; }
+    .jv-total > div:first-child{ flex:1; padding:8px 14px; text-align:right; }
+    .jv-total > div:last-child{ width:150px; padding:8px 14px; text-align:right; font-family:'Courier New',monospace; border-left:1.4px solid #111; }
+    .jv-naration{ padding:9px 14px; font-size:12.5px; }
+    .jv-naration b{ font-weight:700; }
+    .jv-words{ padding:0 14px 9px; font-size:11px; font-style:italic; color:#555; }
+    .jv-sign{ display:flex; }
+    .jv-sign > div{ flex:1; padding:22px 14px 10px; font-size:12px; font-weight:600; }
+    .jv-sign > div:first-child{ border-right:1.4px solid #111; }
+    .foot-note{ margin-top:18px; font-size:11px; color:#777; text-align:center; }
+  </style></head><body>
+  <div class="no-print"><button onclick="window.print()" style="padding:8px 16px;font-size:13px;cursor:pointer;">Print / Save as PDF</button></div>
+  <div class="jv-wrap">
+    <div class="jv-box">
+      <div class="jv-row"><div class="jv-center jv-co-name">${escapeHtml(companyName.toUpperCase())}</div></div>
+      <div class="jv-row"><div class="jv-center jv-title">${voucherLabel.toUpperCase()}</div></div>
+      <div class="jv-row jv-split">
+        <div><span class="jv-lbl">Voucher No.</span>${escapeHtml(rec.voucherNo||'—')}</div>
+        <div><span class="jv-lbl">Date (BS)</span>${bsLabelFromString(rec.date)}</div>
       </div>
-      <div style="padding:20px 24px;">
-        <table style="margin-bottom:10px;">
-          <tbody>
-            <tr><td style="width:140px; font-weight:700; border-bottom:none;">Date (BS)</td><td style="border-bottom:none;">${bsLabelFromString(rec.date)}</td></tr>
-            ${rec.heading?`<tr><td style="font-weight:700; border-bottom:none;">Heading</td><td style="border-bottom:none;">${escapeHtml(rec.heading)}</td></tr>`:''}
-            <tr><td style="font-weight:700; border-bottom:none;">Category</td><td style="border-bottom:none;">${escapeHtml(rec.category)}</td></tr>
-            <tr><td style="font-weight:700; border-bottom:none;">${partyLabel} / Narration</td><td style="border-bottom:none;">${escapeHtml(rec.description||'—')}</td></tr>
-            <tr><td style="font-weight:700; border-bottom:none;">${methodLabel}</td><td style="border-bottom:none;">${escapeHtml(rec.method||'—')}</td></tr>
-            <tr><td style="font-weight:700; border-bottom:none;">Reference No.</td><td style="border-bottom:none;">${escapeHtml(rec.ref||'—')}</td></tr>
-          </tbody>
-        </table>
-        <div style="border-top:1.5px dashed #999; margin:14px 0;"></div>
-        <table style="margin-bottom:6px;">
-          <tbody>
-            <tr><td style="width:140px; font-weight:700; border-bottom:none; vertical-align:top;">Amount in Words</td><td style="border-bottom:none; font-style:italic;">${amountInWords(rec.amount)}</td></tr>
-          </tbody>
-        </table>
-        <div style="text-align:right; margin-top:6px;">
-          <span style="font-size:13px; color:#555;">Amount</span>
-          <span style="font-size:22px; font-weight:700; font-family:'Courier New',monospace; color:${accentColor}; margin-left:10px;">${fmtRs(rec.amount)}</span>
-        </div>
-        <div style="display:flex; justify-content:space-between; margin-top:60px; padding-top:6px;">
-          <div style="text-align:center; width:45%;">
-            <div style="border-top:1px solid #1B2A4A; padding-top:6px; font-size:12px;">Prepared By</div>
-          </div>
-          <div style="text-align:center; width:45%;">
-            <div style="border-top:1px solid #1B2A4A; padding-top:6px; font-size:12px;">${isIncome?'Received By':'Approved By'}</div>
-          </div>
-        </div>
+      ${(rec.ref) ? `<div class="jv-row jv-split">
+        <div><span class="jv-lbl">Branch</span>${escapeHtml(b.name)}</div>
+        <div><span class="jv-lbl">Reference No.</span>${escapeHtml(rec.ref)}</div>
+      </div>` : `<div class="jv-row jv-split">
+        <div><span class="jv-lbl">Branch</span>${escapeHtml(b.name)}</div>
+        <div></div>
+      </div>`}
+      <div class="jv-row"><div style="flex:1;">
+        <div class="jv-head"><div>Particulars</div><div>Amount (Rs.)</div></div>
+        <div class="jv-line"><div>Debit Account : ${debitLabel}</div><div>${amountStr}</div></div>
+        <div class="jv-total"><div>Total</div><div>${amountStr}</div></div>
+        <div class="jv-line" style="margin-top:6px;"><div>Credit Account : ${creditLabel}</div><div>${amountStr}</div></div>
+        <div class="jv-total"><div>Total</div><div>${amountStr}</div></div>
+      </div></div>
+      <div class="jv-row"><div style="flex:1;"><div class="jv-naration"><b>Naration:</b> ${narration}</div><div class="jv-words">Amount in words: ${amountInWords(rec.amount)}</div></div></div>
+      <div class="jv-row jv-sign">
+        <div>Prepared By</div>
+        <div>${isIncome?'Received By':'Authorised Signatory'}</div>
       </div>
     </div>
-  `;
-  printShell(voucherLabel, b.name, body);
+    <div class="foot-note">Generated by Khata — Branch Accounts</div>
+  </div>
+  </body></html>`);
+  win.document.close();
 }
 
 /* ---------------- PARTY PAYMENT VOUCHER PRINT (2 copies on 1 A4 page) ---------------- */
